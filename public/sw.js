@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mpa-piaui-v1';
+const CACHE_NAME = 'mpa-piaui-v2';
 const STATIC_RESOURCES = [
   '/',
   '/index.html',

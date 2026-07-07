@@ -11,7 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
-.envgit add .
+.env
 .env.*
 
 # Editor directories and files

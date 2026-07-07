@@ -1,0 +1,92 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestor de Desembarque Pesqueiro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              display: ['Plus Jakarta Sans', 'sans-serif'],
+            },
+            colors: {
+              brand: {
+                50: '#f0f7ff',
+                100: '#e0effe',
+                200: '#b9dffd',
+                500: '#3b82f6',
+                600: '#2563eb',
+                700: '#1d4ed8',
+                900: '#1e3a8a',
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <script>
+      // Aplica tema escuro imediatamente para evitar flash de tela clara
+      if (localStorage.getItem('fishery_theme') === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    </script>
+    <style>
+      body { font-family: 'Inter', sans-serif; }
+      .font-display { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; }
+      
+      /* Dark mode override for select and input elements to prevent white backgrounds and improve legibility */
+      .dark select,
+      .dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="file"]) {
+        background-color: #1e293b !important; /* bg-slate-800 */
+        color: #f1f5f9 !important; /* text-slate-100 */
+        border-color: #334155 !important; /* border-slate-700 */
+      }
+      .dark select option,
+      .dark select optgroup {
+        background-color: #0f172a !important; /* bg-slate-900 */
+        color: #f1f5f9 !important;
+      }
+      .dark select:focus,
+      .dark input:focus {
+        background-color: #0f172a !important; /* bg-slate-900 */
+        color: #f1f5f9 !important;
+      }
+      .dark input::placeholder {
+        color: #64748b !important; /* placeholder-slate-500 */
+      }
+      
+      /* Redução completa de 30% em todos os elementos e fontes no modo mobile */
+      @media (max-width: 767px) {
+        body {
+          zoom: 0.70 !important;
+        }
+      }
+    </style>
+
+    <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/index.css">
+    
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((reg) => console.log('Service Worker registrado com sucesso:', reg.scope))
+            .catch((err) => console.error('Falha ao registrar Service Worker:', err));
+        });
+      }
+    </script>
+  </head>
+  <body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen transition-colors duration-200">
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

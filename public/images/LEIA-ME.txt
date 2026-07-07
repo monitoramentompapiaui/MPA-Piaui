@@ -1,0 +1,12 @@
+Olá!
+
+Para adicionar a sua logo personalizada em PNG no cabeçalho do sistema, siga estas instruções simples:
+
+1. Salve a sua imagem PNG com o nome de "logo.png" (tudo minúsculo).
+2. Substitua ou coloque o arquivo "logo.png" diretamente nesta pasta (/public/images/).
+3. O sistema reconhecerá e exibirá a sua logo oficial automaticamente no canto superior esquerdo do cabeçalho.
+
+---
+
+O diretório "/public" no Vite serve arquivos estáticos diretamente do servidor na raiz da aplicação.
+Referência usada no código: "/images/logo.png"

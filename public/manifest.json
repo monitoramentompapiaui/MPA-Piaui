@@ -1,0 +1,18 @@
+{
+  "short_name": "MPA Piauí",
+  "name": "MPA Piauí",
+  "description": "Sistema de Gestão de Desembarque Pesqueiro de Piauí com suporte completo offline.",
+  "icons": [
+    {
+      "src": "/images/logo.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "display": "standalone",
+  "orientation": "portrait"
+}

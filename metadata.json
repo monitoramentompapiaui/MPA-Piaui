@@ -1,0 +1,8 @@
+{
+  "name": "6",
+  "description": "Sistema completo para registro e gestão de fichas de desembarque pesqueiro, com cálculo automático de fases da lua, gestão de apetrechos e análise de produção.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

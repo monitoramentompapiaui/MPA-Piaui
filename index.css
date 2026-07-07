@@ -1,0 +1,11 @@
+/* Global CSS for Gestor de Desembarque Pesqueiro */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* Main system overrides */
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+.font-display {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+}

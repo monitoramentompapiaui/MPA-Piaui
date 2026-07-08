@@ -1,6 +1,6 @@
 {
-  "name": "6",
-  "description": "Sistema completo para registro e gestão de fichas de desembarque pesqueiro, com cálculo automático de fases da lua, gestão de apetrechos e análise de produção.",
+  "name": "MPA Piauí",
+  "description": "Sistema de monitoramento de desembarques pesqueiros do Piauí com suporte completo offline.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

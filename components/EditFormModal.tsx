@@ -548,7 +548,7 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
                       type="number" 
                       className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-800"
                       value={editingForm.gear.length || ''}
-                      onChange={e => setEditingForm({...editingForm, gear: {...editingForm.gear, length: parseFloat(e.target.value) || undefined}})}
+                      onChange={e => setEditingForm({...editingForm, gear: {...editingForm.gear, length: e.target.value}})}
                       placeholder="--"
                     />
                   </div>
@@ -556,10 +556,10 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
                     <label className="text-sm font-semibold text-slate-700">Altura (m)</label>
                     <input 
                       id="edit-gear-height"
-                      type="number" 
+                      type="text" 
                       className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-800"
                       value={editingForm.gear.height || ''}
-                      onChange={e => setEditingForm({...editingForm, gear: {...editingForm.gear, height: parseFloat(e.target.value) || undefined}})}
+                      onChange={e => setEditingForm({...editingForm, gear: {...editingForm.gear, height: e.target.value}})}
                       placeholder="--"
                     />
                   </div>
@@ -570,10 +570,10 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
                     <label className="text-sm font-semibold text-slate-700">Número de Anzóis</label>
                     <input 
                       id="edit-gear-hooks"
-                      type="number" 
+                      type="text" 
                       className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-800"
                       value={editingForm.gear.hookCount || ''}
-                      onChange={e => setEditingForm({...editingForm, gear: {...editingForm.gear, hookCount: parseInt(e.target.value) || undefined}})}
+                      onChange={e => setEditingForm({...editingForm, gear: {...editingForm.gear, hookCount: e.target.value}})}
                       placeholder="--"
                     />
                   </div>
@@ -581,10 +581,10 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
                     <label className="text-sm font-semibold text-slate-700">Comprimento do Cabo (m)</label>
                     <input 
                       id="edit-gear-length-esp"
-                      type="number" 
+                      type="text" 
                       className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-800"
                       value={editingForm.gear.length || ''}
-                      onChange={e => setEditingForm({...editingForm, gear: {...editingForm.gear, length: parseFloat(e.target.value) || undefined}})}
+                      onChange={e => setEditingForm({...editingForm, gear: {...editingForm.gear, length: e.target.value}})}
                       placeholder="--"
                     />
                   </div>
@@ -594,10 +594,10 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
                   <label className="text-sm font-semibold text-slate-700">Número de Armadilhas/Covo</label>
                   <input 
                     id="edit-gear-traps"
-                    type="number" 
+                    type="text" 
                     className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-800"
                     value={editingForm.gear.trapCount || ''}
-                    onChange={e => setEditingForm({...editingForm, gear: {...editingForm.gear, trapCount: parseInt(e.target.value) || undefined}})}
+                    onChange={e => setEditingForm({...editingForm, gear: {...editingForm.gear, trapCount: e.target.value}})}
                     placeholder="--"
                   />
                 </div>

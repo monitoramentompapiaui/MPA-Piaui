@@ -23,6 +23,7 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [vesselType, setVesselType] = useState('');
+  const [vesselName, setVesselName] = useState('');
   
   // New split states for arts
   const [gearType, setGearType] = useState('Tarrafa'); // specific gear
@@ -31,6 +32,7 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
   const [customSpecificText, setCustomSpecificText] = useState('');
   
   const [gearDetails, setGearDetails] = useState<GearDetails>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   // Load editor details if editing
   useEffect(() => {
@@ -38,6 +40,7 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
       setName(editingFisherman.name);
       setLocation(editingFisherman.location);
       setVesselType(editingFisherman.vesselType);
+      setVesselName(editingFisherman.vesselName || '');
       
       const specific = editingFisherman.gearType;
       const general = editingFisherman.gearTypeGeneral || getGeneralGearType(specific);
@@ -60,6 +63,7 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
       setName('');
       setLocation('');
       setVesselType('');
+      setVesselName('');
       setGearType('Tarrafa');
       setGearTypeGeneral('Rede de emalhe');
       setIsCustomSpecific(false);
@@ -92,6 +96,7 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
     if (!name.trim() || !location.trim()) {
       alert('Por favor, preencha o nome e a localidade do pescador.');
       return;
@@ -103,11 +108,14 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
       return;
     }
 
+    setIsSaving(true);
+
     const savedFisherman: Fisherman = {
       id: editingFisherman ? editingFisherman.id : generateId(),
       name: standardizeText(name),
       location: standardizeText(location),
       vesselType: vesselType.trim() ? standardizeText(vesselType) : '',
+      vesselName: vesselName.trim() ? standardizeText(vesselName) : undefined,
       propulsionType: '',
       gearType: finalGearType,
       gearTypeGeneral,
@@ -115,6 +123,7 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
     };
 
     onSave(savedFisherman);
+    setIsSaving(false);
   };
 
   return (
@@ -175,6 +184,20 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
               className="w-full p-2.5 sm:p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium text-xs sm:text-sm md:text-base text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
               value={vesselType}
               onChange={e => setVesselType(e.target.value)}
+              placeholder="--"
+            />
+          </div>
+
+          {/* Nome da Embarcação */}
+          <div className="space-y-1.5 sm:space-y-2">
+            <label className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <Ship size={14} className="text-blue-500 sm:w-4 sm:h-4" /> Nome da Embarcação
+            </label>
+            <input 
+              type="text" 
+              className="w-full p-2.5 sm:p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium text-xs sm:text-sm md:text-base text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
+              value={vesselName}
+              onChange={e => setVesselName(e.target.value)}
               placeholder="--"
             />
           </div>
@@ -268,11 +291,10 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
                   <div className="space-y-1.5 sm:space-y-2">
                     <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Comprimento (m)</label>
                     <input 
-                      type="number" 
-                      step="any"
+                      type="text" 
                       className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
                       value={gearDetails.length || ''}
-                      onChange={e => setGearDetails({...gearDetails, length: parseFloat(e.target.value) || undefined})}
+                      onChange={e => setGearDetails({...gearDetails, length: e.target.value})}
                       placeholder="--"
                     />
                   </div>
@@ -292,21 +314,20 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
                   <div className="space-y-1.5 sm:space-y-2">
                     <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Número de Armadilhas/Jequis</label>
                     <input 
-                      type="number" 
+                      type="text" 
                       className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
                       value={gearDetails.trapCount || ''}
-                      onChange={e => setGearDetails({...gearDetails, trapCount: parseInt(e.target.value) || undefined})}
+                      onChange={e => setGearDetails({...gearDetails, trapCount: e.target.value})}
                       placeholder="--"
                     />
                   </div>
                   <div className="space-y-1.5 sm:space-y-2">
                     <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Malha de Sangra (cm)</label>
                     <input 
-                      type="number" 
-                      step="any"
+                      type="text" 
                       className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
                       value={gearDetails.jequiBleedingMesh || ''}
-                      onChange={e => setGearDetails({...gearDetails, jequiBleedingMesh: parseFloat(e.target.value) || undefined})}
+                      onChange={e => setGearDetails({...gearDetails, jequiBleedingMesh: e.target.value})}
                       placeholder="--"
                     />
                   </div>
@@ -326,22 +347,20 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
                   <div className="space-y-1.5 sm:space-y-2">
                     <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Comprimento da Rede (m)</label>
                     <input 
-                      type="number" 
-                      step="any"
+                      type="text" 
                       className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
                       value={gearDetails.length || ''}
-                      onChange={e => setGearDetails({...gearDetails, length: parseFloat(e.target.value) || undefined})}
+                      onChange={e => setGearDetails({...gearDetails, length: e.target.value})}
                       placeholder="--"
                     />
                   </div>
                   <div className="space-y-1.5 sm:space-y-2 md:col-span-2">
                     <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Altura (m)</label>
                     <input 
-                      type="number" 
-                      step="any"
+                      type="text" 
                       className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
                       value={gearDetails.height || ''}
-                      onChange={e => setGearDetails({...gearDetails, height: parseFloat(e.target.value) || undefined})}
+                      onChange={e => setGearDetails({...gearDetails, height: e.target.value})}
                       placeholder="--"
                     />
                   </div>
@@ -351,21 +370,20 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
                   <div className="space-y-1.5 sm:space-y-2">
                     <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Número de Anzóis</label>
                     <input 
-                      type="number" 
+                      type="text" 
                       className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
                       value={gearDetails.hookCount || ''}
-                      onChange={e => setGearDetails({...gearDetails, hookCount: parseInt(e.target.value) || undefined})}
+                      onChange={e => setGearDetails({...gearDetails, hookCount: e.target.value})}
                       placeholder="--"
                     />
                   </div>
                   <div className="space-y-1.5 sm:space-y-2">
                     <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Comprimento do Cabo (m)</label>
                     <input 
-                      type="number" 
-                      step="any"
+                      type="text" 
                       className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
                       value={gearDetails.length || ''}
-                      onChange={e => setGearDetails({...gearDetails, length: parseFloat(e.target.value) || undefined})}
+                      onChange={e => setGearDetails({...gearDetails, length: e.target.value})}
                       placeholder="--"
                     />
                   </div>
@@ -384,10 +402,10 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
                 <div className="space-y-1.5 sm:space-y-2 col-span-1 md:col-span-2">
                   <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Número de Armadilhas/Covo</label>
                   <input 
-                    type="number" 
+                    type="text" 
                     className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
                     value={gearDetails.trapCount || ''}
-                    onChange={e => setGearDetails({...gearDetails, trapCount: parseInt(e.target.value) || undefined})}
+                    onChange={e => setGearDetails({...gearDetails, trapCount: e.target.value})}
                     placeholder="--"
                   />
                 </div>
@@ -396,22 +414,20 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
                   <div className="space-y-1.5 sm:space-y-2">
                     <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Comprimento da Rede (m)</label>
                     <input 
-                      type="number" 
-                      step="any"
+                      type="text" 
                       className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
                       value={gearDetails.netLength || ''}
-                      onChange={e => setGearDetails({...gearDetails, netLength: parseFloat(e.target.value) || undefined})}
+                      onChange={e => setGearDetails({...gearDetails, netLength: e.target.value})}
                       placeholder="--"
                     />
                   </div>
                   <div className="space-y-1.5 sm:space-y-2">
                     <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Altura da Boca da Rede (m)</label>
                     <input 
-                      type="number" 
-                      step="any"
+                      type="text" 
                       className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
                       value={gearDetails.mouthHeight || ''}
-                      onChange={e => setGearDetails({...gearDetails, mouthHeight: parseFloat(e.target.value) || undefined})}
+                      onChange={e => setGearDetails({...gearDetails, mouthHeight: e.target.value})}
                       placeholder="--"
                     />
                   </div>
@@ -447,9 +463,19 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
           
           <button 
             type="submit"
-            className="flex items-center justify-center gap-1.5 px-4 py-2.5 sm:px-10 sm:py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-md sm:shadow-lg shadow-blue-200 dark:shadow-none transition-all font-sans text-xs sm:text-sm"
+            disabled={isSaving}
+            className={`flex items-center justify-center gap-1.5 px-4 py-2.5 sm:px-10 sm:py-3 rounded-xl font-bold shadow-md sm:shadow-lg transition-all font-sans text-xs sm:text-sm ${
+              isSaving 
+                ? 'bg-blue-400 text-white cursor-not-allowed' 
+                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200 dark:shadow-none'
+            }`}
           >
-            <Save size={14} className="sm:w-[18px] sm:h-[18px]" /> {editingFisherman ? 'Salvar Alterações' : 'Salvar Pescador'}
+            {isSaving ? (
+              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <Save size={14} className="sm:w-[18px] sm:h-[18px]" />
+            )}
+            {editingFisherman ? 'Salvar Alterações' : 'Salvar Pescador'}
           </button>
         </div>
       </form>

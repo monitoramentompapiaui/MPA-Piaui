@@ -50,16 +50,15 @@ export interface FishingData {
 
 export interface GearDetails {
   meshSize?: string;
-  height?: number;
-  length?: number;
-  hookCount?: number;
-  trapCount?: number;
-  // New requested fields
-  jequiBleedingMesh?: number;      // "malha de sangra (cm)" for Jequi
-  hookSize?: string;              // "tamanho do anzol" for Linha de mão
-  netLength?: number;             // "comprimento da rede (m)" for Arrasto de fundo
-  mouthHeight?: number;           // "altura da boca da rede (m)" for Arrasto de fundo
-  trawlMeshSize?: string;         // "tamanho da malha (mm)" for Arrasto de fundo
+  height?: string;
+  length?: string;
+  hookCount?: string;
+  trapCount?: string;
+  jequiBleedingMesh?: string;
+  hookSize?: string;
+  netLength?: string;
+  mouthHeight?: string;
+  trawlMeshSize?: string;
 }
 
 export interface LandingForm {
@@ -81,6 +80,7 @@ export interface Fisherman {
   gearType: string; // Suporta digitação livre (arte específica)
   gearTypeGeneral?: string; // Arte de pesca geral preenchida automaticamente
   vesselType: string;
+  vesselName?: string;
   propulsionType: string;
   gearDetails: GearDetails;
 }
@@ -115,6 +115,12 @@ export function isFishermanIncomplete(f: Fisherman): boolean {
   }
   if (gtLower === 'jequi') {
     return !f.gearDetails || !f.gearDetails.trapCount || !f.gearDetails.jequiBleedingMesh;
+  }
+  if (general === 'Rede de emalhe') {
+    return !f.gearDetails || !f.gearDetails.meshSize || !f.gearDetails.length || !f.gearDetails.height;
+  }
+  if (general === 'Armadilha') {
+    return !f.gearDetails || !f.gearDetails.trapCount;
   }
   if (general === 'Linha de mão') {
     return !f.gearDetails || !f.gearDetails.hookCount || !f.gearDetails.length || !f.gearDetails.hookSize || f.gearDetails.hookSize.trim() === '';

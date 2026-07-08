@@ -529,6 +529,7 @@ export const getSupabaseFishermen = async (): Promise<Fisherman[]> => {
       gearType: row.gear_type,
       gearTypeGeneral: row.gear_type_general || row.gear_details?.gearTypeGeneral || getGeneralGearType(row.gear_type || ''),
       vesselType: row.vessel_type,
+      vesselName: row.vessel_name,
       propulsionType: row.propulsion_type,
       gearDetails: row.gear_details
     }));
@@ -553,6 +554,7 @@ export const insertSupabaseFisherman = async (fisher: Fisherman): Promise<void> 
         location: fisher.location,
         gear_type: fisher.gearType,
         vessel_type: fisher.vesselType,
+        vessel_name: fisher.vesselName || null,
         propulsion_type: fisher.propulsionType,
         gear_details: { ...fisher.gearDetails, gearTypeGeneral: fisher.gearTypeGeneral }
       });
@@ -577,6 +579,7 @@ export const insertMultipleSupabaseFishermen = async (fishermen: Fisherman[]): P
       location: fisher.location,
       gear_type: fisher.gearType,
       vessel_type: fisher.vesselType,
+      vessel_name: fisher.vesselName || null,
       propulsion_type: fisher.propulsionType,
       gear_details: { ...fisher.gearDetails, gearTypeGeneral: fisher.gearTypeGeneral }
     }));
@@ -614,6 +617,7 @@ export const updateSupabaseFisherman = async (fisher: Fisherman): Promise<void> 
         location: fisher.location,
         gear_type: fisher.gearType,
         vessel_type: fisher.vesselType,
+        vessel_name: fisher.vesselName || null,
         propulsion_type: fisher.propulsionType,
         gear_details: { ...fisher.gearDetails, gearTypeGeneral: fisher.gearTypeGeneral }
       })

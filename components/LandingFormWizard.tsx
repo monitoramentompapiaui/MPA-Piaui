@@ -205,6 +205,10 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
         gearType: specific,
         gearTypeGeneral: general
       }));
+      setIdent(prev => ({
+        ...prev,
+        vesselName: fisher.vesselName || prev.vesselName
+      }));
       setGear(fisher.gearDetails || {});
     } else {
       setSelectedFishermanId('');
@@ -407,7 +411,8 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
         return;
       }
 
-      const todayStr = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       if (fish.departureDate > todayStr) {
         alert("A data de saída não pode ser futura.");
         return;
@@ -1022,20 +1027,20 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
                 <div className="space-y-2">
                   <label className="text-xs sm:text-sm font-semibold text-slate-750 dark:text-slate-300">Comprimento da Rede (m)</label>
                   <input 
-                    type="number" 
+                    type="text" 
                     className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm"
                     value={gear.length || ''}
-                    onChange={e => setGear({...gear, length: parseFloat(e.target.value)})}
+                    onChange={e => setGear({...gear, length: e.target.value})}
                     placeholder="--"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs sm:text-sm font-semibold text-slate-750 dark:text-slate-300">Altura da Rede (m)</label>
                   <input 
-                    type="number" 
+                    type="text" 
                     className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm"
                     value={gear.height || ''}
-                    onChange={e => setGear({...gear, height: parseFloat(e.target.value)})}
+                    onChange={e => setGear({...gear, height: e.target.value})}
                     placeholder="--"
                   />
                 </div>
@@ -1045,10 +1050,10 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
                 <div className="space-y-2">
                   <label className="text-xs sm:text-sm font-semibold text-slate-755 dark:text-slate-300">Número de Anzóis</label>
                   <input 
-                    type="number" 
+                    type="text" 
                     className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm"
                     value={gear.hookCount || ''}
-                    onChange={e => setGear({...gear, hookCount: parseInt(e.target.value)})}
+                    onChange={e => setGear({...gear, hookCount: e.target.value})}
                     placeholder="--"
                   />
                 </div>
@@ -1056,10 +1061,10 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
                   <label className="text-xs sm:text-sm font-semibold text-slate-755 dark:text-slate-300" htmlFor="comprimento-cabo-linear">Comprimento do Cabo (m)</label>
                   <input 
                     id="comprimento-cabo-linear"
-                    type="number" 
+                    type="text" 
                     className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm"
                     value={gear.length || ''}
-                    onChange={e => setGear({...gear, length: parseFloat(e.target.value)})}
+                    onChange={e => setGear({...gear, length: e.target.value})}
                     placeholder="--"
                   />
                 </div>
@@ -1069,10 +1074,10 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
                 <div className="space-y-2">
                   <label className="text-xs sm:text-sm font-semibold text-slate-760 dark:text-slate-300">Número de Armadilhas/Covo</label>
                   <input 
-                    type="number" 
+                    type="text" 
                     className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none max-w-md font-bold text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm"
                     value={gear.trapCount || ''}
-                    onChange={e => setGear({...gear, trapCount: parseInt(e.target.value)})}
+                    onChange={e => setGear({...gear, trapCount: e.target.value})}
                     placeholder="--"
                   />
                 </div>

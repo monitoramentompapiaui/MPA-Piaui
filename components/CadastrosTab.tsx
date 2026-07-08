@@ -168,7 +168,7 @@ const CadastrosTab: React.FC<Props> = ({
         doc.setFont('helvetica', 'italic');
         doc.setFontSize(8);
         doc.setTextColor(148, 163, 184); // slate-400
-        doc.text('Sistema G.D.P. - Gestor de Desembarque Pesqueiro • Relatório Gerencial', 15, 287);
+        doc.text('MPA Piauí • Sistema de Monitoramento de Desembarques Pesqueiros', 15, 287);
       };
 
       drawHeader(pageNum);
@@ -224,6 +224,10 @@ const CadastrosTab: React.FC<Props> = ({
         doc.setTextColor(71, 85, 105); // slate-600
         doc.text(`Localidade: ${f.location || 'Não Informada'}`, 18, currentY + 15);
         doc.text(`Embarcação: ${f.vesselType || 'Sem Embarcação (Desembarcado)'}`, 18, currentY + 20);
+        if (f.vesselName) {
+          doc.text(`Nome da Embarcação: ${f.vesselName}`, 18, currentY + 25);
+          currentY += 5;
+        }
 
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(29, 78, 216); // blue-700
@@ -274,18 +278,19 @@ const CadastrosTab: React.FC<Props> = ({
       'Nome': f.name || '-',
       'Localidade': f.location || '-',
       'Embarcação': f.vesselType || '-',
+      'Nome da Embarcação': f.vesselName || '-',
       'Tipo de Propulsão': f.propulsionType || '-',
       'Arte de Pesca': f.gearType || '-',
       'Categoria Geral': f.gearTypeGeneral || '-',
       'Tamanho da Malha': f.gearDetails?.meshSize || '-',
-      'Altura (m)': f.gearDetails?.height !== undefined ? f.gearDetails.height : '-',
-      'Comprimento (m)': f.gearDetails?.length !== undefined ? f.gearDetails.length : '-',
-      'N° de Anzóis': f.gearDetails?.hookCount !== undefined ? f.gearDetails.hookCount : '-',
+      'Altura (m)': f.gearDetails?.height || '-',
+      'Comprimento (m)': f.gearDetails?.length || '-',
+      'N° de Anzóis': f.gearDetails?.hookCount || '-',
       'Tamanho do Anzol': f.gearDetails?.hookSize || '-',
-      'N° de Armadilhas': f.gearDetails?.trapCount !== undefined ? f.gearDetails.trapCount : '-',
-      'Malha de Sangra (cm)': f.gearDetails?.jequiBleedingMesh !== undefined ? f.gearDetails.jequiBleedingMesh : '-',
-      'Comp. da Rede (m)': f.gearDetails?.netLength !== undefined ? f.gearDetails.netLength : '-',
-      'Altura da Boca (m)': f.gearDetails?.mouthHeight !== undefined ? f.gearDetails.mouthHeight : '-',
+      'N° de Armadilhas': f.gearDetails?.trapCount || '-',
+      'Malha de Sangra (cm)': f.gearDetails?.jequiBleedingMesh || '-',
+      'Comp. da Rede (m)': f.gearDetails?.netLength || '-',
+      'Altura da Boca (m)': f.gearDetails?.mouthHeight || '-',
       'Malha de Arrasto (mm)': f.gearDetails?.trawlMeshSize || '-'
     }));
     const worksheet = XLSX.utils.json_to_sheet(rows);
@@ -1205,6 +1210,7 @@ const CadastrosTab: React.FC<Props> = ({
         f.name.toLowerCase().includes(q) ||
         f.location.toLowerCase().includes(q) ||
         (f.vesselType && f.vesselType.toLowerCase().includes(q)) ||
+        (f.vesselName && f.vesselName.toLowerCase().includes(q)) ||
         f.gearType.toLowerCase().includes(q)
       );
 
@@ -1604,11 +1610,17 @@ const CadastrosTab: React.FC<Props> = ({
                           )}
 
                           {/* Badges / Vessel specifications */}
-                          <div className="grid grid-cols-2 gap-2 text-xs pt-3 border-t border-slate-50 dark:border-slate-800">
+                          <div className="grid grid-cols-3 gap-2 text-xs pt-3 border-t border-slate-50 dark:border-slate-800">
                             <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-750 px-3 py-2 rounded-xl flex flex-col gap-0.5">
                               <span className="font-semibold text-slate-400 dark:text-slate-500 text-[10px] uppercase">Embarcação</span>
                               <span className={`font-bold truncate ${(!f.vesselType || f.vesselType.trim() === '') ? 'text-red-500 font-extrabold' : 'text-slate-700 dark:text-slate-300'}`}>
                                 {f.vesselType || 'Falta preencher'}
+                              </span>
+                            </div>
+                            <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-750 px-3 py-2 rounded-xl flex flex-col gap-0.5">
+                              <span className="font-semibold text-slate-400 dark:text-slate-500 text-[10px] uppercase">Nome da Embarcação</span>
+                              <span className={`font-bold truncate ${(!f.vesselName || f.vesselName.trim() === '') ? 'text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-300'}`}>
+                                {f.vesselName || '--'}
                               </span>
                             </div>
                             <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100/60 dark:border-blue-900/30 px-3 py-2 rounded-xl flex flex-col gap-0.5 justify-center">

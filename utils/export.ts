@@ -40,19 +40,19 @@ export const exportToExcel = (data: LandingForm[], filename: string) => {
       'Arte de Pesca Geral': form.fishing.gearTypeGeneral || '-',
 
       // Arte de Pesca Específica (Colunas Agrupadas Lado a Lado por Nome do Apetrecho)
-      'Rede de Emalhe: Comprimento (m)': form.gear?.length !== undefined ? form.gear.length : '-',
-      'Rede de Emalhe: Altura (m)': form.gear?.height !== undefined ? form.gear.height : '-',
+      'Rede de Emalhe: Comprimento (m)': form.gear?.length || '-',
+      'Rede de Emalhe: Altura (m)': form.gear?.height || '-',
       'Rede de Emalhe: Tamanho da Malha': form.gear?.meshSize || '-',
 
-      'Linha de Mão: N° de Anzóis': form.gear?.hookCount !== undefined ? form.gear.hookCount : '-',
+      'Linha de Mão: N° de Anzóis': form.gear?.hookCount || '-',
       'Linha de Mão: Tamanho do Anzol': form.gear?.hookSize || '-',
 
-      'Armadilha: N° de Armadilhas': form.gear?.trapCount !== undefined ? form.gear.trapCount : '-',
+      'Armadilha: N° de Armadilhas': form.gear?.trapCount || '-',
 
-      'Jequi: Malha de Sangra (cm)': form.gear?.jequiBleedingMesh !== undefined ? form.gear.jequiBleedingMesh : '-',
+      'Jequi: Malha de Sangra (cm)': form.gear?.jequiBleedingMesh || '-',
 
-      'Arrasto de Fundo: Comprimento da Rede (m)': form.gear?.netLength !== undefined ? form.gear.netLength : '-',
-      'Arrasto de Fundo: Altura da Boca (m)': form.gear?.mouthHeight !== undefined ? form.gear.mouthHeight : '-',
+      'Arrasto de Fundo: Comprimento da Rede (m)': form.gear?.netLength || '-',
+      'Arrasto de Fundo: Altura da Boca (m)': form.gear?.mouthHeight || '-',
       'Arrasto de Fundo: Tamanho da Malha (mm)': form.gear?.trawlMeshSize || '-',
     };
 
@@ -150,14 +150,14 @@ export const importFromExcel = (file: File): Promise<LandingForm[]> => {
               },
               gear: {
                 meshSize: row['Rede de Emalhe: Tamanho da Malha'] || row['Apetrecho: Tamanho da Malha'] || '',
-                height: row['Rede de Emalhe: Altura (m)'] !== undefined && row['Rede de Emalhe: Altura (m)'] !== '-' ? parseFloat(row['Rede de Emalhe: Altura (m)']) : (row['Apetrecho: Altura (m)'] !== undefined && row['Apetrecho: Altura (m)'] !== '-' ? parseFloat(row['Apetrecho: Altura (m)']) : undefined),
-                length: row['Rede de Emalhe: Comprimento (m)'] !== undefined && row['Rede de Emalhe: Comprimento (m)'] !== '-' ? parseFloat(row['Rede de Emalhe: Comprimento (m)']) : (row['Apetrecho: Comprimento (m)'] !== undefined && row['Apetrecho: Comprimento (m)'] !== '-' ? parseFloat(row['Apetrecho: Comprimento (m)']) : undefined),
-                hookCount: row['Linha de Mão: N° de Anzóis'] !== undefined && row['Linha de Mão: N° de Anzóis'] !== '-' ? parseInt(row['Linha de Mão: N° de Anzóis']) : (row['Apetrecho: N° de Anzóis'] !== undefined && row['Apetrecho: N° de Anzóis'] !== '-' ? parseInt(row['Apetrecho: N° de Anzóis']) : undefined),
-                trapCount: row['Armadilha: N° de Armadilhas'] !== undefined && row['Armadilha: N° de Armadilhas'] !== '-' ? parseInt(row['Armadilha: N° de Armadilhas']) : (row['Apetrecho: N° de Armadilhas'] !== undefined && row['Apetrecho: N° de Armadilhas'] !== '-' ? parseInt(row['Apetrecho: N° de Armadilhas']) : undefined),
-                jequiBleedingMesh: row['Jequi: Malha de Sangra (cm)'] !== undefined && row['Jequi: Malha de Sangra (cm)'] !== '-' ? parseFloat(row['Jequi: Malha de Sangra (cm)']) : undefined,
+                height: row['Rede de Emalhe: Altura (m)'] && row['Rede de Emalhe: Altura (m)'] !== '-' ? String(row['Rede de Emalhe: Altura (m)']) : (row['Apetrecho: Altura (m)'] && row['Apetrecho: Altura (m)'] !== '-' ? String(row['Apetrecho: Altura (m)']) : ''),
+                length: row['Rede de Emalhe: Comprimento (m)'] && row['Rede de Emalhe: Comprimento (m)'] !== '-' ? String(row['Rede de Emalhe: Comprimento (m)']) : (row['Apetrecho: Comprimento (m)'] && row['Apetrecho: Comprimento (m)'] !== '-' ? String(row['Apetrecho: Comprimento (m)']) : ''),
+                hookCount: row['Linha de Mão: N° de Anzóis'] && row['Linha de Mão: N° de Anzóis'] !== '-' ? String(row['Linha de Mão: N° de Anzóis']) : (row['Apetrecho: N° de Anzóis'] && row['Apetrecho: N° de Anzóis'] !== '-' ? String(row['Apetrecho: N° de Anzóis']) : ''),
+                trapCount: row['Armadilha: N° de Armadilhas'] && row['Armadilha: N° de Armadilhas'] !== '-' ? String(row['Armadilha: N° de Armadilhas']) : (row['Apetrecho: N° de Armadilhas'] && row['Apetrecho: N° de Armadilhas'] !== '-' ? String(row['Apetrecho: N° de Armadilhas']) : ''),
+                jequiBleedingMesh: row['Jequi: Malha de Sangra (cm)'] && row['Jequi: Malha de Sangra (cm)'] !== '-' ? String(row['Jequi: Malha de Sangra (cm)']) : '',
                 hookSize: row['Linha de Mão: Tamanho do Anzol'] || row['Linha: Tamanho do Anzol'] || '',
-                netLength: row['Arrasto de Fundo: Comprimento da Rede (m)'] !== undefined && row['Arrasto de Fundo: Comprimento da Rede (m)'] !== '-' ? parseFloat(row['Arrasto de Fundo: Comprimento da Rede (m)']) : (row['Arrasto: Comprimento da Rede (m)'] !== undefined && row['Arrasto: Comprimento da Rede (m)'] !== '-' ? parseFloat(row['Arrasto: Comprimento da Rede (m)']) : undefined),
-                mouthHeight: row['Arrasto de Fundo: Altura da Boca (m)'] !== undefined && row['Arrasto de Fundo: Altura da Boca (m)'] !== '-' ? parseFloat(row['Arrasto de Fundo: Altura da Boca (m)']) : (row['Arrasto: Altura da Boca (m)'] !== undefined && row['Arrasto: Altura da Boca (m)'] !== '-' ? parseFloat(row['Arrasto: Altura da Boca (m)']) : undefined),
+                netLength: row['Arrasto de Fundo: Comprimento da Rede (m)'] && row['Arrasto de Fundo: Comprimento da Rede (m)'] !== '-' ? String(row['Arrasto de Fundo: Comprimento da Rede (m)']) : (row['Arrasto: Comprimento da Rede (m)'] && row['Arrasto: Comprimento da Rede (m)'] !== '-' ? String(row['Arrasto: Comprimento da Rede (m)']) : ''),
+                mouthHeight: row['Arrasto de Fundo: Altura da Boca (m)'] && row['Arrasto de Fundo: Altura da Boca (m)'] !== '-' ? String(row['Arrasto de Fundo: Altura da Boca (m)']) : (row['Arrasto: Altura da Boca (m)'] && row['Arrasto: Altura da Boca (m)'] !== '-' ? String(row['Arrasto: Altura da Boca (m)']) : ''),
                 trawlMeshSize: row['Arrasto de Fundo: Tamanho da Malha (mm)'] || row['Arrasto: Tamanho da Malha (mm)'] || ''
               },
               production: []

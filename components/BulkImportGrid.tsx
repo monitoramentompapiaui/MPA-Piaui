@@ -626,30 +626,15 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
         // Gear values parsing
         const gear: any = {};
         
-        const gearLength = parsePortugueseNumber(row.gearLength);
-        if (!isNaN(gearLength) && row.gearLength.trim() !== '') gear.length = gearLength;
-        
-        const gearHeight = parsePortugueseNumber(row.gearHeight);
-        if (!isNaN(gearHeight) && row.gearHeight.trim() !== '') gear.height = gearHeight;
-        
+        if (row.gearLength.trim() !== '') gear.length = row.gearLength.trim();
+        if (row.gearHeight.trim() !== '') gear.height = row.gearHeight.trim();
         if (row.gearMeshSize.trim() !== '') gear.meshSize = row.gearMeshSize.trim();
-        
-        const hookCount = parseInt(row.hookCount, 10);
-        if (!isNaN(hookCount) && row.hookCount.trim() !== '') gear.hookCount = hookCount;
-        
+        if (row.hookCount.trim() !== '') gear.hookCount = row.hookCount.trim();
         if (row.hookSize.trim() !== '') gear.hookSize = row.hookSize.trim();
-        
-        const trapCount = parseInt(row.trapCount, 10);
-        if (!isNaN(trapCount) && row.trapCount.trim() !== '') gear.trapCount = trapCount;
-        
-        const jequiBleedingMesh = parsePortugueseNumber(row.jequiBleedingMesh);
-        if (!isNaN(jequiBleedingMesh) && row.jequiBleedingMesh.trim() !== '') gear.jequiBleedingMesh = jequiBleedingMesh;
-        
-        const netLength = parsePortugueseNumber(row.netLength);
-        if (!isNaN(netLength) && row.netLength.trim() !== '') gear.netLength = netLength;
-        
-        const mouthHeight = parsePortugueseNumber(row.mouthHeight);
-        if (!isNaN(mouthHeight) && row.mouthHeight.trim() !== '') gear.mouthHeight = mouthHeight;
+        if (row.trapCount.trim() !== '') gear.trapCount = row.trapCount.trim();
+        if (row.jequiBleedingMesh.trim() !== '') gear.jequiBleedingMesh = row.jequiBleedingMesh.trim();
+        if (row.netLength.trim() !== '') gear.netLength = row.netLength.trim();
+        if (row.mouthHeight.trim() !== '') gear.mouthHeight = row.mouthHeight.trim();
         
         if (row.trawlMeshSize.trim() !== '') gear.trawlMeshSize = row.trawlMeshSize.trim();
 

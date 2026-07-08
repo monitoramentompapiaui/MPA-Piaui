@@ -1511,6 +1511,7 @@ create table if not exists fishermen (
   location text not null,
   gear_type text not null,
   vessel_type text not null,
+  vessel_name text,
   propulsion_type text not null,
   gear_details jsonb not null default '{}'::jsonb
 );
@@ -1527,8 +1528,9 @@ create table if not exists landing_forms (
   period text
 );
 
--- DICA: Se o seu banco já existe, basta executar esta linha abaixo para adicionar a nova coluna de período:
+-- DICA: Se o seu banco já existe, basta executar estas linhas abaixo para adicionar as novas colunas:
 -- alter table landing_forms add column if not exists period text;
+-- alter table fishermen add column if not exists vessel_name text;
 
 -- 3. Criar tabela de espécies (Atualizada com classificação e links)
 create table if not exists species (
@@ -1571,18 +1573,30 @@ create table if not exists user_profiles (
 -- alter table user_profiles add column if not exists region text;
 -- alter table user_profiles add column if not exists avatar_url text;
 
--- 5. Liberar acessos e desativar Row Level Security (RLS) para API pública
-alter table fishermen disable row level security;
-alter table landing_forms disable row level security;
-alter table species disable row level security;
-alter table user_profiles disable row level security;
+-- 5. ATIVAR Row Level Security (RLS) para proteger os dados
+--    (NUNCA desative RLS em produção — isso expõe todos os dados publicamente)
+alter table fishermen enable row level security;
+alter table landing_forms enable row level security;
+alter table species enable row level security;
+alter table user_profiles enable row level security;
 
-grant all privileges on table fishermen to anon, authenticated, service_role;
-grant all privileges on table landing_forms to anon, authenticated, service_role;
-grant all privileges on table species to anon, authenticated, service_role;
-grant all privileges on table user_profiles to anon, authenticated, service_role;
+-- 6. Remover permissões excessivas do anon (público)
+revoke all on table fishermen from anon;
+revoke all on table landing_forms from anon;
+revoke all on table species from anon;
+revoke all on table user_profiles from anon;
 
--- 6. Todas as 134 espécies recomendadas já foram cadastradas diretamente na sua base de dados.`}</pre>
+-- 7. Políticas: usuários autenticados têm acesso total aos dados
+create policy "authenticated_all_fishermen" on fishermen for all to authenticated using (true) with check (true);
+create policy "authenticated_all_landing_forms" on landing_forms for all to authenticated using (true) with check (true);
+create policy "authenticated_all_species" on species for all to authenticated using (true) with check (true);
+
+-- 8. Política para user_profiles: cada usuário vê/apenas seu próprio perfil
+create policy "users_own_profile_select" on user_profiles for select to authenticated using (auth.uid() = id);
+create policy "users_own_profile_insert" on user_profiles for insert to authenticated with check (auth.uid() = id);
+create policy "users_own_profile_update" on user_profiles for update to authenticated using (auth.uid() = id) with check (auth.uid() = id);
+
+-- 9. Todas as 134 espécies recomendadas já foram cadastradas diretamente na sua base de dados.`}</pre>
                 </div>
               </div>
  

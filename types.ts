@@ -20,6 +20,10 @@ export interface ProductionItem {
   pesoSaco?: number;
   rendimentoPolpa?: number;
   originalPrice?: number;
+  revenue?: number;
+  fornecedores?: number;
+  catadores?: number;
+  coletores?: number;
 }
 
 export interface IdentificationData {
@@ -31,6 +35,9 @@ export interface IdentificationData {
   fishermanName?: string; // "Proprietário"
   vesselName?: string; // "Nome da Embarcação"
   period?: string; // "Período" (seco / chuvoso)
+  numeroGeral?: string; // "Nº Geral" (entrada em lote)
+  portoOrigem?: string; // "Porto de origem"
+  data?: string; // "Data" (data do registro/desembarque, DD/MM/AAAA)
   isManualEntry?: boolean; // Diferencial para identificar cadastros manuais individuais
   createdByEmail?: string;
   createdByUsername?: string;
@@ -46,6 +53,7 @@ export interface FishingData {
   arrivalDate: string;
   fishingDays: number;
   moonPhase: string;
+  pescaSubmarina?: boolean; // "Pesca Submarina"
 }
 
 export interface GearDetails {
@@ -59,6 +67,8 @@ export interface GearDetails {
   netLength?: string;
   mouthHeight?: string;
   trawlMeshSize?: string;
+  covos?: string; // "Nº de Covos"
+  manzuas?: string; // "Nº de Manzuás"
 }
 
 export interface LandingForm {

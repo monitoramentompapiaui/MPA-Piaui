@@ -34,138 +34,171 @@ interface Props {
 interface GridRow {
   id: string;
   selected: boolean;
+  numeroGeral: string;
   idNumber: string;
-  idInterno: string;
+  digitador: string;
   location: string;
   collectorName: string;
   year: string;
   month: string;
-  period: string;
-  fishermanName: string;
-  vesselName: string;
-  fishingGround: string;
-  vesselType: string;
-  propulsionType: string;
-  fisherCount: string;
-  moonPhase: string;
   departureDate: string;
   arrivalDate: string;
+  dataDesembarque: string;
   fishingDays: string;
+  moonPhase: string;
+  period: string;
+  portoOrigem: string;
+  vesselType: string;
+  vesselName: string;
+  fishermanName: string;
+  fisherCount: string;
   gearType: string;
-  gearTypeGeneral: string;
-  gearLength: string;
-  gearHeight: string;
-  gearMeshSize: string;
-  hookCount: string;
+  fishingGround: string;
   hookSize: string;
-  trapCount: string;
+  hookCount: string;
+  linhaLength: string;
+  redeLength: string;
+  redeHeight: string;
+  redeMesh: string;
+  tarrafaLength: string;
+  tarrafaMesh: string;
+  jequiCount: string;
   jequiBleedingMesh: string;
-  netLength: string;
-  mouthHeight: string;
-  trawlMeshSize: string;
+  fisherCount2: string;
+  numSacos: string;
+  numCordas: string;
+  fisherCount3: string;
+  manzuas: string;
+  numCordas2: string;
+  fornecedores: string;
+  catadores: string;
+  numSacos2: string;
+  fornecedores2: string;
+  coletores: string;
+  arrastoNetLength: string;
+  arrastoMouthHeight: string;
+  arrastoMesh: string;
+  covos: string;
+  pescaSubmarina: string;
+  groupType: string;
   species: string;
   scientificName: string;
   weight: string;
   price: string;
-  revenue: string;
-  groupType: string;
-  numCordas: string;
-  numExemplares: string;
-  pesoIndividual: string;
-  numSacos: string;
-  pesoSaco: string;
   rendimentoPolpa: string;
-  originalPrice: string;
+  revenue: string;
 }
 
 const FIELDS: (keyof GridRow)[] = [
+  'numeroGeral',
   'idNumber',
-  'idInterno',
+  'digitador',
   'location',
   'collectorName',
   'year',
   'month',
-  'period',
-  'fishermanName',
-  'vesselName',
-  'fishingGround',
-  'vesselType',
-  'propulsionType',
-  'fisherCount',
-  'moonPhase',
   'departureDate',
   'arrivalDate',
+  'dataDesembarque',
   'fishingDays',
+  'moonPhase',
+  'period',
+  'portoOrigem',
+  'vesselType',
+  'vesselName',
+  'fishermanName',
+  'fisherCount',
   'gearType',
-  'gearTypeGeneral',
-  'gearLength',
-  'gearHeight',
-  'gearMeshSize',
-  'hookCount',
+  'fishingGround',
   'hookSize',
-  'trapCount',
+  'hookCount',
+  'linhaLength',
+  'redeLength',
+  'redeHeight',
+  'redeMesh',
+  'tarrafaLength',
+  'tarrafaMesh',
+  'jequiCount',
   'jequiBleedingMesh',
-  'netLength',
-  'mouthHeight',
-  'trawlMeshSize',
+  'fisherCount2',
+  'numSacos',
+  'numCordas',
+  'fisherCount3',
+  'manzuas',
+  'numCordas2',
+  'fornecedores',
+  'catadores',
+  'numSacos2',
+  'fornecedores2',
+  'coletores',
+  'arrastoNetLength',
+  'arrastoMouthHeight',
+  'arrastoMesh',
+  'covos',
+  'pescaSubmarina',
+  'groupType',
   'species',
   'scientificName',
   'weight',
-  'price',
-  'revenue',
-  'groupType',
-  'numCordas',
-  'numExemplares',
-  'pesoIndividual',
-  'numSacos',
-  'pesoSaco',
   'rendimentoPolpa',
-  'originalPrice'
+  'price',
+  'revenue'
 ];
 
 const FIELD_TRANSLATIONS: Record<string, string> = {
-  idNumber: 'Ficha N.',
-  idInterno: 'ID Interno',
+  numeroGeral: 'Nº Geral',
+  idNumber: 'Ficha (Nº)',
+  digitador: 'Digitador',
   location: 'Local',
   collectorName: 'Coletor',
   year: 'Ano',
   month: 'Mês',
-  period: 'Período (Estação)',
-  fishermanName: 'Pescador / Proprietário',
-  vesselName: 'Nome da Embarcação',
-  fishingGround: 'Pesqueiro / Local de Captura',
-  vesselType: 'Tipo da Embarcação',
-  propulsionType: 'Tipo de Propulsão',
-  fisherCount: 'N° de Pescadores',
-  moonPhase: 'Fase da Lua',
   departureDate: 'Data de Saída',
   arrivalDate: 'Data de Chegada',
+  dataDesembarque: 'Data',
   fishingDays: 'Dias de Pescaria',
+  moonPhase: 'Fase da Lua',
+  period: 'Período',
+  portoOrigem: 'Porto de origem',
+  vesselType: 'Tipo da embarcação',
+  vesselName: 'Nome da embarcação',
+  fishermanName: 'Proprietário',
+  fisherCount: 'Nº de pescadores',
   gearType: 'Arte de Pesca',
-  gearTypeGeneral: 'Arte de Pesca Geral',
-  gearLength: 'Rede de Emalhe: Comprimento (m)',
-  gearHeight: 'Rede de Emalhe: Altura (m)',
-  gearMeshSize: 'Rede de Emalhe: Tamanho da Malha',
-  hookCount: 'Linha de Mão: N° de Anzóis',
-  hookSize: 'Linha de Mão: Tamanho do Anzol',
-  trapCount: 'Armadilha: N° de Armadilhas',
-  jequiBleedingMesh: 'Jequi: Malha de Sangra (cm)',
-  netLength: 'Arrasto de Fundo: Comprimento da Rede (m)',
-  mouthHeight: 'Arrasto de Fundo: Altura da Boca (m)',
-  trawlMeshSize: 'Arrasto de Fundo: Tamanho da Malha (mm)',
-  species: 'Espécie',
-  scientificName: 'Nome Científico',
-  weight: 'Peso Total (Kg)',
-  price: 'Preço de Venda (R$/Kg)',
-  revenue: 'Receita Estimada (R$)',
-  groupType: 'Grupo Especial',
-  numCordas: 'N° de Cordas',
-  numExemplares: 'Exemplares por Corda',
-  pesoIndividual: 'Peso Individual do Exemplar (kg)',
-  numSacos: 'N° de Sacos',
-  pesoSaco: 'Peso do Saco (kg)',
-  rendimentoPolpa: 'Rendimento da Polpa (kg)',
-  originalPrice: 'Preço Unitário Original (R$)'
+  fishingGround: 'Pesqueiro',
+  hookSize: 'Tamanho do Anzol',
+  hookCount: 'Nº de anzóis',
+  linhaLength: 'Comprimento da linha (m)',
+  redeLength: 'Comprimento da Rede (m)',
+  redeHeight: 'Altura da rede (m)',
+  redeMesh: 'Tamanho da Malha (mm)',
+  tarrafaLength: 'Comprimento da Tarrafa (m)',
+  tarrafaMesh: 'Tamanho da Malha (mm)',
+  jequiCount: 'Nº de Jequis',
+  jequiBleedingMesh: 'Malha da sanga (cm)',
+  fisherCount2: 'Nº de Pescadores',
+  numSacos: 'Nº de Sacos',
+  numCordas: 'Nº Cordas',
+  fisherCount3: 'Nº de Pescadores',
+  manzuas: 'Nº de Manzuás',
+  numCordas2: 'N° Cordas',
+  fornecedores: 'N° de fornecedores',
+  catadores: 'N° de catadores',
+  numSacos2: 'N° de sacos',
+  fornecedores2: 'N° de fornecedores',
+  coletores: 'N° de coletores',
+  arrastoNetLength: 'Comprimento da Rede (m)',
+  arrastoMouthHeight: 'Altura da Boca da Rede (m)',
+  arrastoMesh: 'Tamanho da Malha (mm)',
+  covos: 'Nº de Covos',
+  pescaSubmarina: 'Pesca Submarina',
+  groupType: 'Grupo',
+  species: 'Nome Popular',
+  scientificName: 'Nome científico',
+  weight: 'Peso (Kg)',
+  rendimentoPolpa: 'Polpa Marisco (kg)',
+  price: 'Preço Kg (R$)',
+  revenue: 'Receita'
 };
 
 // Componente de linha memoizado com otimização de renderização nativa (CSS contain)
@@ -441,48 +474,59 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
     return { 
       id: generateId(), 
       selected: false, 
+      numeroGeral: '', 
       idNumber: '', 
-      idInterno: '',
+      digitador: '',
       location: '', 
       collectorName: '', 
       year: '', 
       month: '', 
-      period: '',
-      fishermanName: '',
-      vesselName: '',
-      fishingGround: '', 
-      vesselType: '', 
-      propulsionType: '',
-      fisherCount: '',
-      moonPhase: '',
       departureDate: '', 
       arrivalDate: '', 
+      dataDesembarque: '',
       fishingDays: '',
+      moonPhase: '',
+      period: '',
+      portoOrigem: '',
+      vesselType: '', 
+      vesselName: '',
+      fishermanName: '',
+      fisherCount: '',
       gearType: '', 
-      gearTypeGeneral: '',
-      gearLength: '',
-      gearHeight: '',
-      gearMeshSize: '',
-      hookCount: '',
+      fishingGround: '', 
       hookSize: '',
-      trapCount: '',
+      hookCount: '',
+      linhaLength: '',
+      redeLength: '',
+      redeHeight: '',
+      redeMesh: '',
+      tarrafaLength: '',
+      tarrafaMesh: '',
+      jequiCount: '',
       jequiBleedingMesh: '',
-      netLength: '',
-      mouthHeight: '',
-      trawlMeshSize: '',
+      fisherCount2: '',
+      numSacos: '',
+      numCordas: '',
+      fisherCount3: '',
+      manzuas: '',
+      numCordas2: '',
+      fornecedores: '',
+      catadores: '',
+      numSacos2: '',
+      fornecedores2: '',
+      coletores: '',
+      arrastoNetLength: '',
+      arrastoMouthHeight: '',
+      arrastoMesh: '',
+      covos: '',
+      pescaSubmarina: '',
+      groupType: '',
       species: '', 
       scientificName: '', 
       weight: '', 
       price: '',
-      revenue: '',
-      groupType: '',
-      numCordas: '',
-      numExemplares: '',
-      pesoIndividual: '',
-      numSacos: '',
-      pesoSaco: '',
       rendimentoPolpa: '',
-      originalPrice: ''
+      revenue: ''
     };
   }
 
@@ -493,9 +537,6 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
       const next = [...prev];
       
       const updatedRow = { ...next[idx], [field]: value };
-      if (field === 'gearType') {
-        updatedRow.gearTypeGeneral = getGeneralGearType(value);
-      }
       next[idx] = updatedRow;
       return next;
     });
@@ -541,9 +582,6 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
               const field = FIELDS[targetFieldIdx];
               const val = columns[j].trim();
               updatedRow[field] = val;
-              if (field === 'gearType') {
-                updatedRow.gearTypeGeneral = getGeneralGearType(val);
-              }
             }
           }
           nextRows[targetRowIdx] = updatedRow;
@@ -557,7 +595,9 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
   }, [focusedCell, isImporting]);
 
   const handleFinalize = async () => {
-    const validRows = rows.filter(row => row.collectorName.trim() && row.species.trim() && row.weight.trim());
+    const validRows = rows
+      .map((row, index) => ({ row, index }))
+      .filter(({ row }) => row.collectorName.trim() && row.species.trim() && row.weight.trim());
     if (validRows.length === 0) {
       alert("Erro: Preencha pelo menos Coletor, Espécie e Peso.");
       return;
@@ -570,7 +610,7 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
     const CHUNK_SIZE = 40;
     for (let i = 0; i < validRows.length; i += CHUNK_SIZE) {
       const chunk = validRows.slice(i, i + CHUNK_SIZE);
-      const processedChunk = chunk.map(row => {
+      const processedChunk = chunk.map(({ row, index: rowIndex }) => {
         const arrival = row.arrivalDate.trim();
         const departure = row.departureDate.trim();
         const isoArrival = parseToISODate(arrival);
@@ -623,22 +663,31 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
         calculatedYear = calculatedYear || new Date().getFullYear();
         calculatedPeriod = calculatedPeriod || 'seco';
 
-        // Gear values parsing
+        // Colunas repetidas na ficha impressa são mescladas (usa-se o primeiro valor preenchido)
+        const fisherCountVal = (row.fisherCount || row.fisherCount2 || row.fisherCount3 || '').trim();
+        const numCordasVal = (row.numCordas || row.numCordas2 || '').trim();
+        const numSacosVal = (row.numSacos || row.numSacos2 || '').trim();
+        const fornecedoresVal = (row.fornecedores || row.fornecedores2 || '').trim();
+
+        // Gear values parsing (grava no JSONB 'gear' do Supabase)
         const gear: any = {};
         
-        if (row.gearLength.trim() !== '') gear.length = row.gearLength.trim();
-        if (row.gearHeight.trim() !== '') gear.height = row.gearHeight.trim();
-        if (row.gearMeshSize.trim() !== '') gear.meshSize = row.gearMeshSize.trim();
+        const lengthVal = (row.linhaLength || row.redeLength || row.tarrafaLength || '').trim();
+        if (lengthVal !== '') gear.length = lengthVal;
+        if (row.redeHeight.trim() !== '') gear.height = row.redeHeight.trim();
+        const meshVal = (row.redeMesh || row.tarrafaMesh || '').trim();
+        if (meshVal !== '') gear.meshSize = meshVal;
         if (row.hookCount.trim() !== '') gear.hookCount = row.hookCount.trim();
         if (row.hookSize.trim() !== '') gear.hookSize = row.hookSize.trim();
-        if (row.trapCount.trim() !== '') gear.trapCount = row.trapCount.trim();
+        if (row.jequiCount.trim() !== '') gear.trapCount = row.jequiCount.trim();
         if (row.jequiBleedingMesh.trim() !== '') gear.jequiBleedingMesh = row.jequiBleedingMesh.trim();
-        if (row.netLength.trim() !== '') gear.netLength = row.netLength.trim();
-        if (row.mouthHeight.trim() !== '') gear.mouthHeight = row.mouthHeight.trim();
-        
-        if (row.trawlMeshSize.trim() !== '') gear.trawlMeshSize = row.trawlMeshSize.trim();
+        if (row.arrastoNetLength.trim() !== '') gear.netLength = row.arrastoNetLength.trim();
+        if (row.arrastoMouthHeight.trim() !== '') gear.mouthHeight = row.arrastoMouthHeight.trim();
+        if (row.arrastoMesh.trim() !== '') gear.trawlMeshSize = row.arrastoMesh.trim();
+        if (row.covos.trim() !== '') gear.covos = row.covos.trim();
+        if (row.manzuas.trim() !== '') gear.manzuas = row.manzuas.trim();
 
-        // Production values parsing
+        // Production values parsing (grava no JSONB 'production' do Supabase)
         const weightVal = parsePortugueseNumber(row.weight);
         const priceVal = parsePortugueseNumber(row.price);
         const revenueVal = parsePortugueseNumber(row.revenue);
@@ -656,35 +705,55 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
           price: !isNaN(finalPrice) ? finalPrice : 0
         };
 
+        const calculatedRevenue = !isNaN(revenueVal)
+          ? revenueVal
+          : (weightVal > 0 && priceVal > 0 ? weightVal * priceVal : undefined);
+        if (typeof calculatedRevenue === 'number') {
+          productionItem.revenue = calculatedRevenue;
+        }
+
         if (row.groupType.trim() !== '') productionItem.groupType = row.groupType.trim();
         
-        const numCordas = parseInt(row.numCordas, 10);
-        if (!isNaN(numCordas) && row.numCordas.trim() !== '') productionItem.numCordas = numCordas;
+        const numCordas = parseInt(numCordasVal, 10);
+        if (!isNaN(numCordas) && numCordasVal !== '') productionItem.numCordas = numCordas;
         
-        const numExemplares = parseInt(row.numExemplares, 10);
-        if (!isNaN(numExemplares) && row.numExemplares.trim() !== '') productionItem.numExemplares = numExemplares;
-        
-        const pesoIndividual = parsePortugueseNumber(row.pesoIndividual);
-        if (!isNaN(pesoIndividual) && row.pesoIndividual.trim() !== '') productionItem.pesoIndividual = pesoIndividual;
-        
-        const numSacos = parseInt(row.numSacos, 10);
-        if (!isNaN(numSacos) && row.numSacos.trim() !== '') productionItem.numSacos = numSacos;
-        
-        const pesoSaco = parsePortugueseNumber(row.pesoSaco);
-        if (!isNaN(pesoSaco) && row.pesoSaco.trim() !== '') productionItem.pesoSaco = pesoSaco;
+        const numSacos = parseInt(numSacosVal, 10);
+        if (!isNaN(numSacos) && numSacosVal !== '') productionItem.numSacos = numSacos;
         
         const rendimentoPolpa = parsePortugueseNumber(row.rendimentoPolpa);
         if (!isNaN(rendimentoPolpa) && row.rendimentoPolpa.trim() !== '') productionItem.rendimentoPolpa = rendimentoPolpa;
         
-        const originalPrice = parsePortugueseNumber(row.originalPrice);
-        if (!isNaN(originalPrice) && row.originalPrice.trim() !== '') productionItem.originalPrice = originalPrice;
+        const fornecedoresNum = parseInt(fornecedoresVal, 10);
+        if (!isNaN(fornecedoresNum) && fornecedoresVal !== '') productionItem.fornecedores = fornecedoresNum;
+        
+        const catadoresNum = parseInt(row.catadores, 10);
+        if (!isNaN(catadoresNum) && row.catadores.trim() !== '') productionItem.catadores = catadoresNum;
+        
+        const coletoresNum = parseInt(row.coletores, 10);
+        if (!isNaN(coletoresNum) && row.coletores.trim() !== '') productionItem.coletores = coletoresNum;
+
+        // Grupos especiais preservam o preço original por unidade (corda/saco/polpa)
+        const gtLower = String(productionItem.groupType || '').toLowerCase();
+        if (['caranguejo_siri', 'ostra', 'marisco'].includes(gtLower) && !isNaN(finalPrice)) {
+          productionItem.originalPrice = finalPrice;
+        }
+
+        // Pesca Submarina (coluna "Sim"/"Não" -> booleano)
+        const pescaSubmarinaText = (row.pescaSubmarina || '').trim().toLowerCase();
+        const pescaSubmarina = ['nao', 'não', 'no', 'n', '0', 'false'].includes(pescaSubmarinaText)
+          ? false
+          : (pescaSubmarinaText !== '');
+
+        // Nº Geral: preenche automaticamente com o número da linha na planilha se vazio
+        const numeroGeral = row.numeroGeral.trim() !== '' ? row.numeroGeral.trim() : String(rowIndex + 1);
 
         return {
-          id: row.idInterno ? row.idInterno.trim() : generateId(),
+          id: generateId(),
           idNumber: row.idNumber ? row.idNumber.trim() : undefined,
           createdAt: new Date().toISOString(),
           isBulkImport: true,
           identification: { 
+            numeroGeral,
             collectorName: standardizeText(row.collectorName), 
             location: standardizeText(row.location), 
             fishingGround: row.fishingGround ? standardizeText(row.fishingGround) : undefined, 
@@ -692,18 +761,22 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
             month: calculatedMonth,
             fishermanName: row.fishermanName ? standardizeText(row.fishermanName) : undefined,
             vesselName: row.vesselName ? standardizeText(row.vesselName) : undefined,
-            period: calculatedPeriod
+            period: calculatedPeriod,
+            portoOrigem: row.portoOrigem ? standardizeText(row.portoOrigem) : undefined,
+            data: row.dataDesembarque ? row.dataDesembarque.trim() : undefined,
+            createdByUsername: row.digitador ? standardizeText(row.digitador) : undefined
           },
           fishing: { 
             vesselType: row.vesselType ? standardizeText(row.vesselType) : '', 
-            propulsionType: row.propulsionType ? standardizeText(row.propulsionType) : '', 
-            fisherCount: parseInt(row.fisherCount, 10) || 1, 
+            propulsionType: '', 
+            fisherCount: parseInt(fisherCountVal, 10) || 1, 
             gearType: row.gearType ? standardizeText(row.gearType) : 'Tarrafa', 
-            gearTypeGeneral: row.gearTypeGeneral ? standardizeText(row.gearTypeGeneral) : getGeneralGearType(row.gearType || 'Tarrafa'), 
+            gearTypeGeneral: getGeneralGearType(row.gearType || 'Tarrafa'), 
             departureDate: isoDeparture, 
             arrivalDate: isoArrival, 
             fishingDays: fishingDays, 
-            moonPhase 
+            moonPhase,
+            pescaSubmarina
           },
           gear,
           production: [productionItem]

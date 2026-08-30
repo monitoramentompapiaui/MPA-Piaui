@@ -37,7 +37,6 @@ export interface IdentificationData {
   period?: string; // "Período" (seco / chuvoso)
   numeroGeral?: string; // "Nº Geral" (entrada em lote)
   portoOrigem?: string; // "Porto de origem"
-  data?: string; // "Data" (data do registro/desembarque, DD/MM/AAAA)
   isManualEntry?: boolean; // Diferencial para identificar cadastros manuais individuais
   createdByEmail?: string;
   createdByUsername?: string;

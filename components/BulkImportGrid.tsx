@@ -43,7 +43,6 @@ interface GridRow {
   month: string;
   departureDate: string;
   arrivalDate: string;
-  dataDesembarque: string;
   fishingDays: string;
   moonPhase: string;
   period: string;
@@ -99,7 +98,6 @@ const FIELDS: (keyof GridRow)[] = [
   'month',
   'departureDate',
   'arrivalDate',
-  'dataDesembarque',
   'fishingDays',
   'moonPhase',
   'period',
@@ -155,7 +153,6 @@ const FIELD_TRANSLATIONS: Record<string, string> = {
   month: 'Mês',
   departureDate: 'Data de Saída',
   arrivalDate: 'Data de Chegada',
-  dataDesembarque: 'Data',
   fishingDays: 'Dias de Pescaria',
   moonPhase: 'Fase da Lua',
   period: 'Período',
@@ -483,7 +480,6 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
       month: '', 
       departureDate: '', 
       arrivalDate: '', 
-      dataDesembarque: '',
       fishingDays: '',
       moonPhase: '',
       period: '',
@@ -763,7 +759,6 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
             vesselName: row.vesselName ? standardizeText(row.vesselName) : undefined,
             period: calculatedPeriod,
             portoOrigem: row.portoOrigem ? standardizeText(row.portoOrigem) : undefined,
-            data: row.dataDesembarque ? row.dataDesembarque.trim() : undefined,
             createdByUsername: row.digitador ? standardizeText(row.digitador) : undefined
           },
           fishing: { 

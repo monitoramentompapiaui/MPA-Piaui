@@ -69,9 +69,10 @@ interface GridRow {
   numCordas2: string;
   fornecedores: string;
   catadores: string;
-  numSacos2: string;
+  numCordas: string;
   fornecedores2: string;
   coletores: string;
+  numSacos: string;
   arrastoNetLength: string;
   arrastoMouthHeight: string;
   arrastoMesh: string;
@@ -123,9 +124,10 @@ const FIELDS: (keyof GridRow)[] = [
   'numCordas2',
   'fornecedores',
   'catadores',
-  'numSacos2',
+  'numCordas',
   'fornecedores2',
   'coletores',
+  'numSacos',
   'arrastoNetLength',
   'arrastoMouthHeight',
   'arrastoMesh',
@@ -176,9 +178,10 @@ const FIELD_TRANSLATIONS: Record<string, string> = {
   numCordas2: 'Manzuá - Sirí - N° Cordas',
   fornecedores: 'Caranguejo - N° de fornecedores',
   catadores: 'Caranguejo - N° de catadores',
-  numSacos2: 'Caranguejo - N° de sacos',
+  numCordas: 'Caranguejo - N° de cordas',
   fornecedores2: 'Ostra - N° de fornecedores',
   coletores: 'Ostra - N° de coletores',
+  numSacos: 'Ostra - N° de sacos',
   arrastoNetLength: 'Arrasto de Fundo - Camarão (LC) - Comprimento da Rede (m)',
   arrastoMouthHeight: 'Arrasto de Fundo - Camarão (LC) - Altura da Boca da Rede (m)',
   arrastoMesh: 'Arrasto de Fundo - Camarão (LC) - Tamanho da Malha (mm)',
@@ -500,9 +503,10 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
       numCordas2: '',
       fornecedores: '',
       catadores: '',
-      numSacos2: '',
+      numCordas: '',
       fornecedores2: '',
       coletores: '',
+      numSacos: '',
       arrastoNetLength: '',
       arrastoMouthHeight: '',
       arrastoMesh: '',
@@ -653,8 +657,8 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
 
         // Colunas repetidas na ficha impressa são mescladas (usa-se o primeiro valor preenchido)
         const fisherCountVal = (row.fisherCount || row.fisherCount2 || row.fisherCount3 || '').trim();
-        const numCordasVal = (row.numCordas2 || '').trim();
-        const numSacosVal = (row.numSacos2 || '').trim();
+        const numCordasVal = (row.numCordas || row.numCordas2 || '').trim();
+        const numSacosVal = (row.numSacos || '').trim();
         const fornecedoresVal = (row.fornecedores || row.fornecedores2 || '').trim();
 
         // Gear values parsing (grava no JSONB 'gear' do Supabase)

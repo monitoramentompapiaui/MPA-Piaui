@@ -64,8 +64,6 @@ interface GridRow {
   jequiCount: string;
   jequiBleedingMesh: string;
   fisherCount2: string;
-  numSacos: string;
-  numCordas: string;
   fisherCount3: string;
   manzuas: string;
   numCordas2: string;
@@ -119,8 +117,7 @@ const FIELDS: (keyof GridRow)[] = [
   'jequiCount',
   'jequiBleedingMesh',
   'fisherCount2',
-  'numSacos',
-  'numCordas',
+  'rendimentoPolpa',
   'fisherCount3',
   'manzuas',
   'numCordas2',
@@ -138,7 +135,6 @@ const FIELDS: (keyof GridRow)[] = [
   'species',
   'scientificName',
   'weight',
-  'rendimentoPolpa',
   'price',
   'revenue'
 ];
@@ -163,37 +159,35 @@ const FIELD_TRANSLATIONS: Record<string, string> = {
   fisherCount: 'Nº de pescadores',
   gearType: 'Arte de Pesca',
   fishingGround: 'Pesqueiro',
-  hookSize: 'Tamanho do Anzol',
-  hookCount: 'Nº de anzóis',
-  linhaLength: 'Comprimento da linha (m)',
-  redeLength: 'Comprimento da Rede (m)',
-  redeHeight: 'Altura da rede (m)',
-  redeMesh: 'Tamanho da Malha (mm)',
-  tarrafaLength: 'Comprimento da Tarrafa (m)',
-  tarrafaMesh: 'Tamanho da Malha (mm)',
-  jequiCount: 'Nº de Jequis',
-  jequiBleedingMesh: 'Malha da sanga (cm)',
-  fisherCount2: 'Nº de Pescadores',
-  numSacos: 'Nº de Sacos',
-  numCordas: 'Nº Cordas',
-  fisherCount3: 'Nº de Pescadores',
-  manzuas: 'Nº de Manzuás',
-  numCordas2: 'N° Cordas',
-  fornecedores: 'N° de fornecedores',
-  catadores: 'N° de catadores',
-  numSacos2: 'N° de sacos',
-  fornecedores2: 'N° de fornecedores',
-  coletores: 'N° de coletores',
-  arrastoNetLength: 'Comprimento da Rede (m)',
-  arrastoMouthHeight: 'Altura da Boca da Rede (m)',
-  arrastoMesh: 'Tamanho da Malha (mm)',
-  covos: 'Nº de Covos',
-  pescaSubmarina: 'Pesca Submarina',
+  hookSize: 'Linha de Mão - Tamanho do Anzol',
+  hookCount: 'Linha de Mão - Nº de anzóis',
+  linhaLength: 'Linha de Mão - Comprimento da linha (m)',
+  redeLength: 'Rede de Emalhe - Comprimento da Rede (m)',
+  redeHeight: 'Rede de Emalhe - Altura da rede (m)',
+  redeMesh: 'Rede de Emalhe - Tamanho da Malha (mm)',
+  tarrafaLength: 'Tarrafa - Comprimento da Tarrafa (m)',
+  tarrafaMesh: 'Tarrafa - Tamanho da Malha (mm)',
+  jequiCount: 'Jequi - Camarão - Nº de Jequis',
+  jequiBleedingMesh: 'Jequi - Camarão - Malha da sanga (cm)',
+  fisherCount2: 'Landuá - Mariscos - Nº de Pescadores',
+  rendimentoPolpa: 'Landuá - Mariscos - Peso do marisco com casca',
+  fisherCount3: 'Manzuá - Sirí - Nº de Pescadores',
+  manzuas: 'Manzuá - Sirí - Nº de Manzuás',
+  numCordas2: 'Manzuá - Sirí - N° Cordas',
+  fornecedores: 'Caranguejo - N° de fornecedores',
+  catadores: 'Caranguejo - N° de catadores',
+  numSacos2: 'Caranguejo - N° de sacos',
+  fornecedores2: 'Ostra - N° de fornecedores',
+  coletores: 'Ostra - N° de coletores',
+  arrastoNetLength: 'Arrasto de Fundo - Camarão (LC) - Comprimento da Rede (m)',
+  arrastoMouthHeight: 'Arrasto de Fundo - Camarão (LC) - Altura da Boca da Rede (m)',
+  arrastoMesh: 'Arrasto de Fundo - Camarão (LC) - Tamanho da Malha (mm)',
+  covos: 'Covo - Lagosta - Nº de Covos',
+  pescaSubmarina: 'Pesca Submarina - Pesca Submarina',
   groupType: 'Grupo',
   species: 'Nome Popular',
   scientificName: 'Nome científico',
   weight: 'Peso (Kg)',
-  rendimentoPolpa: 'Polpa Marisco (kg)',
   price: 'Preço Kg (R$)',
   revenue: 'Receita'
 };
@@ -501,8 +495,6 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
       jequiCount: '',
       jequiBleedingMesh: '',
       fisherCount2: '',
-      numSacos: '',
-      numCordas: '',
       fisherCount3: '',
       manzuas: '',
       numCordas2: '',
@@ -661,8 +653,8 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
 
         // Colunas repetidas na ficha impressa são mescladas (usa-se o primeiro valor preenchido)
         const fisherCountVal = (row.fisherCount || row.fisherCount2 || row.fisherCount3 || '').trim();
-        const numCordasVal = (row.numCordas || row.numCordas2 || '').trim();
-        const numSacosVal = (row.numSacos || row.numSacos2 || '').trim();
+        const numCordasVal = (row.numCordas2 || '').trim();
+        const numSacosVal = (row.numSacos2 || '').trim();
         const fornecedoresVal = (row.fornecedores || row.fornecedores2 || '').trim();
 
         // Gear values parsing (grava no JSONB 'gear' do Supabase)

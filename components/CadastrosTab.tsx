@@ -20,7 +20,9 @@ import {
   FileDown,
   ExternalLink,
   RefreshCw,
-  TableProperties
+  TableProperties,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
@@ -60,7 +62,7 @@ const CadastrosTab: React.FC<Props> = ({
   // Additional Fisherman Filters
   const [filterFishermanLocation, setFilterFishermanLocation] = useState('');
   const [filterFishermanGear, setFilterFishermanGear] = useState('');
-  const [filterFishermanVessel, setFilterFishermanVessel] = useState('');
+  const [expandedFishermanId, setExpandedFishermanId] = useState<string | null>(null);
 
   // Additional Species Filters
   const [filterSpeciesPhoto, setFilterSpeciesPhoto] = useState<'all' | 'with' | 'without'>('all');
@@ -228,10 +230,8 @@ const CadastrosTab: React.FC<Props> = ({
         doc.setFontSize(9);
         doc.setTextColor(71, 85, 105); // slate-600
         doc.text(`Localidade: ${f.location || 'Não Informada'}`, 18, currentY + 15);
-        doc.text(`Embarcação: ${f.vesselType || 'Sem Embarcação (Desembarcado)'}`, 18, currentY + 20);
         if (f.vesselName) {
-          doc.text(`Nome da Embarcação: ${f.vesselName}`, 18, currentY + 25);
-          currentY += 5;
+          doc.text(`Nome da Embarcação: ${f.vesselName}`, 18, currentY + 20);
         }
 
         doc.setFont('helvetica', 'bold');
@@ -282,7 +282,6 @@ const CadastrosTab: React.FC<Props> = ({
       '#': idx + 1,
       'Nome': f.name || '-',
       'Localidade': f.location || '-',
-      'Embarcação': f.vesselType || '-',
       'Nome da Embarcação': f.vesselName || '-',
       'Tipo de Propulsão': f.propulsionType || '-',
       'Arte de Pesca': f.gearType || '-',
@@ -1201,12 +1200,6 @@ const CadastrosTab: React.FC<Props> = ({
     return Array.from(gSet).sort();
   }, [fishermen]);
 
-  const vesselTypes = useMemo(() => {
-    const vSet = new Set<string>();
-    fishermen.forEach(f => { if (f.vesselType) vSet.add(f.vesselType.trim()); });
-    return Array.from(vSet).sort();
-  }, [fishermen]);
-
   // Filter systems
   const filteredFishermen = useMemo(() => {
     return fishermen.filter(f => {
@@ -1214,18 +1207,16 @@ const CadastrosTab: React.FC<Props> = ({
       const matchesSearch = !fishermanSearch || (
         f.name.toLowerCase().includes(q) ||
         f.location.toLowerCase().includes(q) ||
-        (f.vesselType && f.vesselType.toLowerCase().includes(q)) ||
         (f.vesselName && f.vesselName.toLowerCase().includes(q)) ||
         f.gearType.toLowerCase().includes(q)
       );
 
       const matchesLocation = !filterFishermanLocation || f.location === filterFishermanLocation;
       const matchesGear = !filterFishermanGear || f.gearType === filterFishermanGear;
-      const matchesVessel = !filterFishermanVessel || f.vesselType === filterFishermanVessel;
 
-      return matchesSearch && matchesLocation && matchesGear && matchesVessel;
+      return matchesSearch && matchesLocation && matchesGear;
     });
-  }, [fishermen, fishermanSearch, filterFishermanLocation, filterFishermanGear, filterFishermanVessel]);
+  }, [fishermen, fishermanSearch, filterFishermanLocation, filterFishermanGear]);
 
   const filteredSpeciesList = useMemo(() => {
     let list = speciesList.filter(s => {
@@ -1512,7 +1503,7 @@ const CadastrosTab: React.FC<Props> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   {/* Search input */}
                   <div className="relative">
                     <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
@@ -1553,20 +1544,6 @@ const CadastrosTab: React.FC<Props> = ({
                     </select>
                   </div>
 
-                  {/* Dropdown Embarcação */}
-                  <div className="relative">
-                    <select
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500"
-                      value={filterFishermanVessel}
-                      onChange={e => setFilterFishermanVessel(e.target.value)}
-                    >
-                      <option value="" className="dark:bg-slate-900">Todas as Embarcações</option>
-                      {vesselTypes.map(vessel => (
-                        <option key={vessel} value={vessel} className="dark:bg-slate-900">{vessel}</option>
-                      ))}
-                    </select>
-                  </div>
-
                   {/* Action Buttons: Add / Reset */}
                   <div className="flex gap-2">
                     <button
@@ -1575,7 +1552,6 @@ const CadastrosTab: React.FC<Props> = ({
                         setFishermanSearch('');
                         setFilterFishermanLocation('');
                         setFilterFishermanGear('');
-                        setFilterFishermanVessel('');
                       }}
                       className="flex-1 flex items-center justify-center gap-1.5 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200 text-xs font-bold transition-all"
                     >
@@ -1609,141 +1585,156 @@ const CadastrosTab: React.FC<Props> = ({
                   <p className="text-slate-400 dark:text-slate-500 font-semibold">Nenhum pescador encontrado para a busca "{fishermanSearch}".</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-3">
                   {filteredFishermen.map(f => {
                     const isIncomplete = isFishermanIncomplete(f);
+                    const isExpanded = expandedFishermanId === f.id;
+                    const locationMissing = !f.location || f.location.trim() === '' || f.location.trim() === '-' || f.location.trim() === 'Não informado';
+                    const missingSpan = <span className="inline-flex items-center gap-1 text-[8px] font-extrabold text-red-600 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/30 px-1 py-0.5 rounded tracking-wider animate-pulse">⚠️ FALTANDO</span>;
+                    const isTarrafa = f.gearType.toLowerCase() === 'tarrafa';
+                    const gearSpecs: { label: string; value: string }[] = [];
+                    if (f.gearDetails?.meshSize) gearSpecs.push({ label: 'Malha', value: `${f.gearDetails.meshSize} ${isTarrafa ? 'cm' : 'mm'}` });
+                    if (f.gearDetails?.length) gearSpecs.push({ label: 'Comprimento', value: `${f.gearDetails.length} m` });
+                    if (f.gearDetails?.height) gearSpecs.push({ label: 'Altura', value: `${f.gearDetails.height} m` });
+                    if (f.gearDetails?.hookCount) gearSpecs.push({ label: 'Anzóis', value: String(f.gearDetails.hookCount) });
+                    if (f.gearDetails?.hookSize) gearSpecs.push({ label: 'Anzol', value: String(f.gearDetails.hookSize) });
+                    if (f.gearDetails?.trapCount) gearSpecs.push({ label: 'Armadilhas', value: String(f.gearDetails.trapCount) });
+                    if (f.gearDetails?.jequiBleedingMesh) gearSpecs.push({ label: 'Malha de Sangra', value: `${f.gearDetails.jequiBleedingMesh} cm` });
+                    if (f.gearDetails?.netLength) gearSpecs.push({ label: 'Comp. da Rede', value: `${f.gearDetails.netLength} m` });
+                    if (f.gearDetails?.mouthHeight) gearSpecs.push({ label: 'Boca da Rede', value: `${f.gearDetails.mouthHeight} m` });
+                    if (f.gearDetails?.trawlMeshSize) gearSpecs.push({ label: 'Malha de Arrasto', value: `${f.gearDetails.trawlMeshSize} mm` });
+                    if ((f.gearDetails as any)?.cataManual) gearSpecs.push({ label: 'Cata Manual', value: String((f.gearDetails as any).cataManual) });
+                    if ((f.gearDetails as any)?.manzuas) gearSpecs.push({ label: 'Manzuás', value: String((f.gearDetails as any).manzuas) });
                     return (
-                      <div key={f.id} className={`rounded-3xl border overflow-hidden shadow-sm hover:shadow-md transition-all p-5 flex flex-col justify-between gap-5 relative group ${isIncomplete ? 'border-red-300 dark:border-red-900/40 bg-red-50/5 dark:bg-red-950/5 hover:border-red-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'}`}>
-                        <div className="space-y-4">
-                          <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-2xl flex items-center justify-center shrink-0">
-                              <User className="text-blue-600 dark:text-blue-400" size={18} />
+                      <div key={f.id} className={`group rounded-2xl border transition-all overflow-hidden ${
+                        isIncomplete
+                          ? 'border-red-300 bg-red-50/30 dark:bg-red-950/10 shadow-sm hover:bg-red-50/45'
+                          : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md'
+                      }`}>
+                        <div className="p-5 flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-5 flex-1 min-w-0">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
+                              isIncomplete
+                                ? 'bg-red-500 text-white shadow shadow-red-200 dark:shadow-none'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                            }`}>
+                              <Anchor size={18} />
                             </div>
-                            <div className="flex-1 min-w-0 pr-8">
-                              <h4 className="font-extrabold text-slate-800 dark:text-slate-150 text-base group-hover:text-blue-650 dark:group-hover:text-blue-400 transition-colors leading-tight truncate">{f.name}</h4>
-                              <span className={`text-xs font-semibold flex items-center gap-1 mt-0.5 ${(!f.location || f.location.trim() === '' || f.location.trim() === '-' || f.location.trim() === 'Não informado') ? 'text-red-500 font-extrabold' : 'text-slate-400 dark:text-slate-500'}`}>
-                                <MapPin size={11} className={(!f.location || f.location.trim() === '' || f.location.trim() === '-' || f.location.trim() === 'Não informado') ? 'text-red-500' : 'text-slate-350 dark:text-slate-600'} /> {f.location || 'Não informado'}
-                              </span>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 flex-1 min-w-0">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <User size={18} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-tighter">Proprietário</p>
+                                    {isIncomplete && (
+                                      <span className="bg-red-100 dark:bg-red-950/55 text-red-700 dark:text-red-400 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">Incompleto</span>
+                                    )}
+                                  </div>
+                                  <p className="font-bold text-slate-800 dark:text-slate-100 truncate" title={f.name}>{f.name || (missingSpan as any)}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3 min-w-0">
+                                <MapPin size={18} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-tighter">Localidade</p>
+                                  <p className={`font-semibold truncate ${locationMissing ? 'text-red-500 font-extrabold' : 'text-slate-700 dark:text-slate-300'}`}>
+                                    {f.location || 'Não informado'}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3 min-w-0">
+                                <Ship size={18} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-tighter">Nome da Embarcação</p>
+                                  <p className="font-semibold text-slate-700 dark:text-slate-300 truncate">{f.vesselName || '---'}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3 min-w-0">
+                                <Anchor size={18} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-tighter">Arte de Pesca</p>
+                                  <p className="font-semibold text-slate-700 dark:text-slate-300 truncate" title={f.gearType}>{f.gearType}</p>
+                                </div>
+                              </div>
                             </div>
                           </div>
-
-                          {isIncomplete && (
-                            <div className="absolute top-4 right-4 bg-red-650 text-white text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider flex items-center gap-1 shadow-sm animate-pulse">
-                              <Info size={10} /> Incompleto
-                            </div>
-                          )}
-
-                          {/* Badges / Vessel specifications */}
-                          <div className="grid grid-cols-3 gap-2 text-xs pt-3 border-t border-slate-50 dark:border-slate-800">
-                            <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-750 px-3 py-2 rounded-xl flex flex-col gap-0.5">
-                              <span className="font-semibold text-slate-400 dark:text-slate-500 text-[10px] uppercase">Embarcação</span>
-                              <span className={`font-bold truncate ${(!f.vesselType || f.vesselType.trim() === '') ? 'text-red-500 font-extrabold' : 'text-slate-700 dark:text-slate-300'}`}>
-                                {f.vesselType || 'Falta preencher'}
-                              </span>
-                            </div>
-                            <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-750 px-3 py-2 rounded-xl flex flex-col gap-0.5">
-                              <span className="font-semibold text-slate-400 dark:text-slate-500 text-[10px] uppercase">Nome da Embarcação</span>
-                              <span className={`font-bold truncate ${(!f.vesselName || f.vesselName.trim() === '') ? 'text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-300'}`}>
-                                {f.vesselName || '--'}
-                              </span>
-                            </div>
-                            <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100/60 dark:border-blue-900/30 px-3 py-2 rounded-xl flex flex-col gap-0.5 justify-center">
-                              <span className="font-semibold text-blue-500 dark:text-blue-400 text-[10px] uppercase">Arte de Pesca</span>
-                              <span className="font-extrabold text-blue-800 dark:text-blue-300 truncate flex items-center gap-1.5"><Anchor size={11} /> {f.gearType}</span>
-                            </div>
+                          <div className="flex items-center gap-3 ml-4 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => setEditingFisherman(f)}
+                              className="p-2.5 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl transition-all"
+                              title="Editar Pescador"
+                            >
+                              <Edit2 size={18} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm(`Deseja realmente excluir o pescador "${f.name}"?`)) {
+                                  onDeleteFisherman(f.id);
+                                }
+                              }}
+                              className="p-2.5 text-slate-300 dark:text-slate-600 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-slate-800 rounded-xl transition-all"
+                              title="Excluir Pescador"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setExpandedFishermanId(prev => prev === f.id ? null : f.id)}
+                              className="p-2.5 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
+                              title="Estender Pescador (Visualização Rápida)"
+                            >
+                              {isExpanded ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+                            </button>
                           </div>
+                        </div>
 
-                          {/* Novo: Porto de Origem / Proprietário / Nº de Pescadores (entrada em lote) */}
-                          {(f.portoOrigem || f.owner || f.fisherCount) && (
-                            <div className="mt-1 flex flex-wrap gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 bg-blue-50/40 dark:bg-blue-950/15 p-2.5 rounded-2xl border border-blue-100/50 dark:border-blue-900/30">
-                              <span className="font-extrabold text-blue-500 dark:text-blue-400 block w-full mb-1 text-[8px] uppercase tracking-wider">Dados da Entrada</span>
-                              {f.portoOrigem && (
-                                <span className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-1.5 py-0.5 rounded-md font-semibold">Porto: {f.portoOrigem}</span>
-                              )}
-                              {f.owner && (
-                                <span className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-1.5 py-0.5 rounded-md font-semibold">Proprietário: {f.owner}</span>
-                              )}
-                              {f.fisherCount && (
-                                <span className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-1.5 py-0.5 rounded-md font-semibold">Pescadores: {f.fisherCount}</span>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Extra Dynamic Specifications Badges */}
-                          {(() => {
-                            const isTarrafa = f.gearType.toLowerCase() === 'tarrafa';
-                            const hasGearDetails = !!(
-                              f.gearDetails?.meshSize || 
-                              f.gearDetails?.hookCount || 
-                              f.gearDetails?.trapCount || 
-                              f.gearDetails?.length || 
-                              f.gearDetails?.height ||
-                              f.gearDetails?.jequiBleedingMesh ||
-                              f.gearDetails?.hookSize ||
-                              f.gearDetails?.netLength ||
-                              f.gearDetails?.mouthHeight ||
-                              f.gearDetails?.trawlMeshSize
-                            );
-                            if (!hasGearDetails) return null;
-                            return (
-                              <div className="mt-1 flex flex-wrap gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 bg-slate-50/70 dark:bg-slate-800/40 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-800">
-                                <span className="font-extrabold text-slate-400 dark:text-slate-500 block w-full mb-1 text-[8px] uppercase tracking-wider">Especificações</span>
-                                {f.gearDetails?.meshSize && (
-                                  <span className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-1.5 py-0.5 rounded-md font-semibold">Malha: {f.gearDetails.meshSize} {isTarrafa ? 'cm' : 'mm'}</span>
-                                )}
-                                {f.gearDetails?.length && (
-                                  <span className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-1.5 py-0.5 rounded-md font-semibold">Comprimento: {f.gearDetails.length} m</span>
-                                )}
-                                {f.gearDetails?.height && (
-                                  <span className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-1.5 py-0.5 rounded-md font-semibold">Altura: {f.gearDetails.height} m</span>
-                                )}
-                                {f.gearDetails?.hookCount && (
-                                  <span className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-1.5 py-0.5 rounded-md font-semibold">Anzóis: {f.gearDetails.hookCount}</span>
-                                )}
-                                {f.gearDetails?.trapCount && (
-                                  <span className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-1.5 py-0.5 rounded-md font-semibold">Armadilhas: {f.gearDetails.trapCount}</span>
-                                )}
-                                {f.gearDetails?.jequiBleedingMesh && (
-                                  <span className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-1.5 py-0.5 rounded-md font-semibold text-blue-600 dark:text-blue-400">Malha Sangra: {f.gearDetails.jequiBleedingMesh} cm</span>
-                                )}
-                                {f.gearDetails?.hookSize && (
-                                  <span className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-1.5 py-0.5 rounded-md font-semibold text-blue-600 dark:text-blue-400">Anzol: {f.gearDetails.hookSize}</span>
-                                )}
-                                {f.gearDetails?.netLength && (
-                                  <span className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-1.5 py-0.5 rounded-md font-semibold text-blue-600 dark:text-blue-400">Rede: {f.gearDetails.netLength} m</span>
-                                )}
-                                {f.gearDetails?.mouthHeight && (
-                                  <span className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-1.5 py-0.5 rounded-md font-semibold text-blue-600 dark:text-blue-400">Boca Rede: {f.gearDetails.mouthHeight} m</span>
-                                )}
-                                {f.gearDetails?.trawlMeshSize && (
-                                  <span className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-1.5 py-0.5 rounded-md font-semibold text-blue-600 dark:text-blue-400">Malha Arrasto: {f.gearDetails.trawlMeshSize} mm</span>
+                        {isExpanded && (
+                          <div className="px-5 pb-6 border-t border-slate-50 dark:border-slate-800 pt-6 bg-slate-50/50 dark:bg-slate-900/50 animate-in slide-in-from-top-2 duration-200">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              <div className={`p-4 rounded-2xl border transition-all ${
+                                isIncomplete ? 'bg-red-50/15 dark:bg-red-950/10 border-red-200 dark:border-red-900/30' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800'
+                              }`}>
+                                <div className="flex items-center justify-between mb-4">
+                                  <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase">Infos do Pescador</h4>
+                                  {isIncomplete && <span className="text-[9px] font-black text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-950/55 border border-red-300 dark:border-red-900/40 px-2 py-0.5 rounded-full uppercase">Incompleto</span>}
+                                </div>
+                                <div className="space-y-2 text-xs">
+                                  <p><span className="text-slate-500 dark:text-slate-400">Proprietário:</span> {f.name?.trim() ? <span className="font-bold text-blue-700 dark:text-blue-400">{f.name}</span> : missingSpan}</p>
+                                  <p><span className="text-slate-500 dark:text-slate-400">Localidade:</span> {f.location?.trim() && !locationMissing ? <span className="font-bold text-slate-800 dark:text-slate-100">{f.location}</span> : missingSpan}</p>
+                                  <p><span className="text-slate-500 dark:text-slate-400">Nome da Embarcação:</span> {f.vesselName?.trim() ? <span className="font-bold text-slate-800 dark:text-slate-100">{f.vesselName}</span> : <span className="font-medium text-slate-400 dark:text-slate-500">Não informado (Opcional)</span>}</p>
+                                  <p><span className="text-slate-500 dark:text-slate-400">Porto de Origem:</span> {f.portoOrigem?.trim() ? <span className="font-bold text-slate-800 dark:text-slate-100">{f.portoOrigem}</span> : <span className="font-medium text-slate-400 dark:text-slate-500">Não informado (Opcional)</span>}</p>
+                                  <p><span className="text-slate-500 dark:text-slate-400">Arte de Pesca:</span> {f.gearType?.trim() ? <span className="font-bold text-slate-800 dark:text-slate-100">{f.gearType}</span> : missingSpan}</p>
+                                  <p><span className="text-slate-500 dark:text-slate-400">Categoria Geral:</span> <span className="font-bold text-slate-800 dark:text-slate-100">{f.gearTypeGeneral || 'Não informado (Opcional)'}</span></p>
+                                  <p><span className="text-slate-500 dark:text-slate-400">Pesca Submarina:</span> <span className="font-bold text-slate-800 dark:text-slate-100">{f.pescaSubmarina || 'Não informado (Opcional)'}</span></p>
+                                  <p><span className="text-slate-500 dark:text-slate-400">Nº de Pescadores:</span> <span className="font-bold text-slate-800 dark:text-slate-100">{f.fisherCount || 'Não informado (Opcional)'}</span></p>
+                                </div>
+                              </div>
+                              <div className="md:col-span-2 p-4 rounded-2xl border bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 transition-all">
+                                <div className="flex items-center justify-between mb-4">
+                                  <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase">Especificações da Arte de Pesca</h4>
+                                  {gearSpecs.length === 0 && (
+                                    <span className="text-[9px] font-black text-slate-500 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-full uppercase">Sem especificações</span>
+                                  )}
+                                </div>
+                                {gearSpecs.length > 0 ? (
+                                  <div className="flex flex-wrap gap-2">
+                                    {gearSpecs.map(spec => (
+                                      <span key={spec.label} className="text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-750 px-3 py-1.5 rounded-xl font-semibold text-slate-700 dark:text-slate-300">
+                                        {spec.label}: <span className="font-extrabold text-blue-700 dark:text-blue-400">{spec.value}</span>
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+                                    Nenhuma especificação de dimensões cadastrada para a arte <strong className="text-slate-600 dark:text-slate-350">{f.gearType}</strong>.
+                                  </p>
                                 )}
                               </div>
-                            );
-                          })()}
-                        </div>
-
-                        {/* Row management buttons */}
-                        <div className="flex items-center justify-end gap-1.5 pt-3 border-t border-slate-100 dark:border-slate-800">
-                          <button
-                            type="button"
-                            onClick={() => setEditingFisherman(f)}
-                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors border border-transparent hover:border-blue-100 dark:hover:border-blue-900/30"
-                          >
-                            <Edit2 size={13} /> Editar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (confirm(`Deseja realmente excluir o pescador "${f.name}"?`)) {
-                                onDeleteFisherman(f.id);
-                              }
-                            }}
-                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors border border-transparent hover:border-red-100 dark:hover:border-red-900/30"
-                          >
-                            <Trash2 size={13} /> Excluir
-                          </button>
-                        </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

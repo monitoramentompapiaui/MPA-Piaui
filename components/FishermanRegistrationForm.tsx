@@ -22,7 +22,6 @@ interface Props {
 const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingFisherman }) => {
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
-  const [vesselType, setVesselType] = useState('');
   const [vesselName, setVesselName] = useState('');
   
   // New split states for arts
@@ -39,7 +38,6 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
     if (editingFisherman) {
       setName(editingFisherman.name);
       setLocation(editingFisherman.location);
-      setVesselType(editingFisherman.vesselType);
       setVesselName(editingFisherman.vesselName || '');
       
       const specific = editingFisherman.gearType;
@@ -62,7 +60,6 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
       // Reset form
       setName('');
       setLocation('');
-      setVesselType('');
       setVesselName('');
       setGearType('Tarrafa');
       setGearTypeGeneral('Rede de emalhe');
@@ -114,7 +111,7 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
       id: editingFisherman ? editingFisherman.id : generateId(),
       name: standardizeText(name),
       location: standardizeText(location),
-      vesselType: vesselType.trim() ? standardizeText(vesselType) : '',
+      vesselType: '',
       vesselName: vesselName.trim() ? standardizeText(vesselName) : undefined,
       propulsionType: '',
       gearType: finalGearType,
@@ -172,20 +169,6 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
                 <option key={loc} value={loc} className="dark:bg-slate-800">{loc}</option>
               ))}
             </select>
-          </div>
-
-          {/* Tipo de Embarcação */}
-          <div className="space-y-1.5 sm:space-y-2">
-            <label className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-              <Ship size={14} className="text-blue-500 sm:w-4 sm:h-4" /> Tipo de Embarcação
-            </label>
-            <input 
-              type="text" 
-              className="w-full p-2.5 sm:p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium text-xs sm:text-sm md:text-base text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
-              value={vesselType}
-              onChange={e => setVesselType(e.target.value)}
-              placeholder="--"
-            />
           </div>
 
           {/* Nome da Embarcação */}

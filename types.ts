@@ -114,8 +114,7 @@ export function isFishermanIncomplete(f: Fisherman): boolean {
   if (
     !f.name || f.name.trim() === '' ||
     !f.location || f.location.trim() === '' || f.location.trim() === '-' || f.location.trim() === 'Não informado' ||
-    !f.gearType || f.gearType.trim() === '' || f.gearType.trim() === 'Não informado' ||
-    f.vesselType === undefined || f.vesselType.trim() === ''
+    !f.gearType || f.gearType.trim() === '' || f.gearType.trim() === 'Não informado'
   ) {
     return true;
   }

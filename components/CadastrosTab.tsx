@@ -19,11 +19,13 @@ import {
   Compass,
   FileDown,
   ExternalLink,
-  RefreshCw
+  RefreshCw,
+  TableProperties
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
 import FishermanRegistrationForm from './FishermanRegistrationForm';
+import BulkFishermenImportGrid from './BulkFishermenImportGrid';
 import { standardizeText, standardizeScientificName } from '../utils/textUtils';
 import { isSupabaseConfigured, uploadSpeciesPhotoToSupabase } from '../utils/supabase';
 import ImageEditorModal from './ImageEditorModal';
@@ -32,6 +34,7 @@ import { getOrGenerateWorldMapImage } from '../utils/mapGenerator';
 interface Props {
   fishermen: Fisherman[];
   onAddFisherman: (fisherman: Fisherman) => void;
+  onAddMultipleFishermen: (fishermen: Fisherman[]) => void;
   onDeleteFisherman: (id: string) => void;
   onUpdateFisherman: (fisherman: Fisherman) => void;
   speciesList: Species[];
@@ -42,6 +45,7 @@ interface Props {
 const CadastrosTab: React.FC<Props> = ({
   fishermen,
   onAddFisherman,
+  onAddMultipleFishermen,
   onDeleteFisherman,
   onUpdateFisherman,
   speciesList,
@@ -49,6 +53,7 @@ const CadastrosTab: React.FC<Props> = ({
   onDeleteSpecies
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'fishermen' | 'species'>('fishermen');
+  const [isBulkImportingFishermen, setIsBulkImportingFishermen] = useState(false);
   const [fishermanSearch, setFishermanSearch] = useState('');
   const [speciesSearch, setSpeciesSearch] = useState('');
 
@@ -1406,7 +1411,7 @@ const CadastrosTab: React.FC<Props> = ({
         <div className="flex bg-white/10 backdrop-blur-md p-1 rounded-2xl border border-white/10 self-start mt-6 max-w-md w-full sm:w-80">
           <button
             type="button"
-            onClick={() => { setActiveSubTab('fishermen'); setEditingFisherman(null); setIsAddingFisherman(false); }}
+            onClick={() => { setActiveSubTab('fishermen'); setEditingFisherman(null); setIsAddingFisherman(false); setIsBulkImportingFishermen(false); }}
             className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl transition-all font-bold text-xs select-none w-1/2 justify-center ${
               activeSubTab === 'fishermen' 
                 ? 'bg-white text-blue-800 shadow-md' 
@@ -1434,7 +1439,17 @@ const CadastrosTab: React.FC<Props> = ({
       {/* FISHERS SECTION */}
       {activeSubTab === 'fishermen' && (
         <div className="space-y-6 animate-in fade-in duration-300">
-          {isAddingFisherman || editingFisherman ? (
+          {isBulkImportingFishermen ? (
+            <div className="transition-all animate-in slide-in-from-bottom duration-300">
+              <BulkFishermenImportGrid 
+                onSave={(bulkFishermen) => {
+                  onAddMultipleFishermen(bulkFishermen);
+                  setIsBulkImportingFishermen(false);
+                }}
+                onCancel={() => setIsBulkImportingFishermen(false)}
+              />
+            </div>
+          ) : isAddingFisherman || editingFisherman ? (
             <div className="transition-all animate-in slide-in-from-bottom duration-300">
               <FishermanRegistrationForm 
                 onSave={(newFisher) => {
@@ -1467,6 +1482,15 @@ const CadastrosTab: React.FC<Props> = ({
                         {filteredFishermen.length} {filteredFishermen.length === 1 ? 'Pescador' : 'Pescadores'}
                       </div>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => setIsBulkImportingFishermen(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 text-blue-600 dark:text-blue-400 hover:text-blue-700 text-xs font-black rounded-full border border-blue-150 dark:border-blue-900/40 transition-all cursor-pointer"
+                      title="Adicionar vários pescadores de uma vez copiando e colando da planilha Excel"
+                    >
+                      <TableProperties size={13} />
+                      Entrada em Lote
+                    </button>
                     <button
                       type="button"
                       disabled={filteredFishermen.length === 0}
@@ -1628,6 +1652,22 @@ const CadastrosTab: React.FC<Props> = ({
                               <span className="font-extrabold text-blue-800 dark:text-blue-300 truncate flex items-center gap-1.5"><Anchor size={11} /> {f.gearType}</span>
                             </div>
                           </div>
+
+                          {/* Novo: Porto de Origem / Proprietário / Nº de Pescadores (entrada em lote) */}
+                          {(f.portoOrigem || f.owner || f.fisherCount) && (
+                            <div className="mt-1 flex flex-wrap gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 bg-blue-50/40 dark:bg-blue-950/15 p-2.5 rounded-2xl border border-blue-100/50 dark:border-blue-900/30">
+                              <span className="font-extrabold text-blue-500 dark:text-blue-400 block w-full mb-1 text-[8px] uppercase tracking-wider">Dados da Entrada</span>
+                              {f.portoOrigem && (
+                                <span className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-1.5 py-0.5 rounded-md font-semibold">Porto: {f.portoOrigem}</span>
+                              )}
+                              {f.owner && (
+                                <span className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-1.5 py-0.5 rounded-md font-semibold">Proprietário: {f.owner}</span>
+                              )}
+                              {f.fisherCount && (
+                                <span className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-1.5 py-0.5 rounded-md font-semibold">Pescadores: {f.fisherCount}</span>
+                              )}
+                            </div>
+                          )}
 
                           {/* Extra Dynamic Specifications Badges */}
                           {(() => {

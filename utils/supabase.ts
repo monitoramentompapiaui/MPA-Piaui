@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { LandingForm, Fisherman, Species } from '../types';
+import { LandingForm, Fisherman, GearDetails, Species } from '../types';
 import { getGeneralGearType } from './gearUtils';
 
 // Retrieve credentials safely from Vite env
@@ -522,17 +522,27 @@ export const getSupabaseFishermen = async (): Promise<Fisherman[]> => {
       }
     }
 
-    const mapped = allData.map(row => ({
-      id: row.id,
-      name: row.name,
-      location: row.location,
-      gearType: row.gear_type,
-      gearTypeGeneral: row.gear_type_general || row.gear_details?.gearTypeGeneral || getGeneralGearType(row.gear_type || ''),
-      vesselType: row.vessel_type,
-      vesselName: row.vessel_name,
-      propulsionType: row.propulsion_type,
-      gearDetails: row.gear_details
-    }));
+    const mapped = allData.map(row => {
+      const gd = parseFishermanGearDetails(row);
+      return {
+        id: row.id,
+        name: row.name,
+        location: row.location,
+        gearType: row.gear_type,
+        gearTypeGeneral: row.gear_type_general || row.gear_details?.gearTypeGeneral || getGeneralGearType(row.gear_type || ''),
+        vesselType: row.vessel_type,
+        vesselName: row.vessel_name,
+        propulsionType: row.propulsion_type,
+        gearDetails: {
+          ...(gd.gearDetails || {}),
+          gearTypeGeneral: row.gear_type_general || row.gear_details?.gearTypeGeneral
+        },
+        portoOrigem: gd.portoOrigem,
+        owner: gd.owner,
+        fisherCount: gd.fisherCount,
+        pescaSubmarina: gd.pescaSubmarina
+      };
+    });
 
     // Extremely fast client-side sorting in memory solves Supabase Filesort statement timeout completely!
     return mapped.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt'));
@@ -540,6 +550,30 @@ export const getSupabaseFishermen = async (): Promise<Fisherman[]> => {
     console.warn('Aviso: Falha de conexão com o Supabase ao buscar pescadores:', err);
     throw err;
   }
+};
+
+// Armazena os campos novos do cadastro (porto de origem, proprietário, nº pescadores, pesca submarina)
+// dentro do JSONB gear_details para preservar round-trip sem exigir novas colunas na tabela fishermen.
+const buildFishermanGearDetails = (fisher: Fisherman): any => {
+  return {
+    ...(fisher.gearDetails || {}),
+    gearTypeGeneral: fisher.gearTypeGeneral,
+    _portoOrigem: fisher.portoOrigem || null,
+    _owner: fisher.owner || null,
+    _fisherCount: fisher.fisherCount || null,
+    _pescaSubmarina: fisher.pescaSubmarina || null
+  };
+};
+
+const parseFishermanGearDetails = (row: any): { gearDetails: GearDetails; portoOrigem?: string; owner?: string; fisherCount?: string; pescaSubmarina?: string } => {
+  const gd = row.gear_details || {};
+  return {
+    gearDetails: gd,
+    portoOrigem: gd._portoOrigem || undefined,
+    owner: gd._owner || undefined,
+    fisherCount: gd._fisherCount || undefined,
+    pescaSubmarina: gd._pescaSubmarina || undefined
+  };
 };
 
 export const insertSupabaseFisherman = async (fisher: Fisherman): Promise<void> => {
@@ -556,7 +590,7 @@ export const insertSupabaseFisherman = async (fisher: Fisherman): Promise<void> 
         vessel_type: fisher.vesselType,
         vessel_name: fisher.vesselName || null,
         propulsion_type: fisher.propulsionType,
-        gear_details: { ...fisher.gearDetails, gearTypeGeneral: fisher.gearTypeGeneral }
+        gear_details: buildFishermanGearDetails(fisher)
       });
 
     if (error) {
@@ -581,7 +615,7 @@ export const insertMultipleSupabaseFishermen = async (fishermen: Fisherman[]): P
       vessel_type: fisher.vesselType,
       vessel_name: fisher.vesselName || null,
       propulsion_type: fisher.propulsionType,
-      gear_details: { ...fisher.gearDetails, gearTypeGeneral: fisher.gearTypeGeneral }
+      gear_details: buildFishermanGearDetails(fisher)
     }));
 
     const CHUNK_SIZE = 120;
@@ -619,7 +653,7 @@ export const updateSupabaseFisherman = async (fisher: Fisherman): Promise<void> 
         vessel_type: fisher.vesselType,
         vessel_name: fisher.vesselName || null,
         propulsion_type: fisher.propulsionType,
-        gear_details: { ...fisher.gearDetails, gearTypeGeneral: fisher.gearTypeGeneral }
+        gear_details: buildFishermanGearDetails(fisher)
       })
       .eq('id', fisher.id);
 

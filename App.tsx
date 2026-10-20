@@ -64,6 +64,7 @@ import {
   deleteSupabaseForm,
   deleteMultipleSupabaseForms,
   insertSupabaseFisherman,
+  insertMultipleSupabaseFishermen,
   updateSupabaseFisherman,
   deleteSupabaseFisherman,
   getSupabaseSpecies,
@@ -723,6 +724,27 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const saveMultipleFishermen = useCallback(async (newFishermen: Fisherman[]) => {
+    setFishermen(prev => [...newFishermen, ...prev]);
+
+    if (isSupabaseConfigured) {
+      try {
+        setIsSyncing(true);
+        setSyncError(null);
+        await insertMultipleSupabaseFishermen(newFishermen);
+        showToast('success', 'Lote Cadastrado', `${newFishermen.length} pescador(es) cadastrado(s) e sincronizado(s) com sucesso.`);
+      } catch (err: any) {
+        console.error("Erro no salvamento multi-linhas de pescadores:", err);
+        setSyncError("Lote de pescadores salvo localmente (algumas falhas de rede com o Supabase).");
+        showToast('warning', 'Modo Offline', `${newFishermen.length} pescador(es) salvo(s) localmente. Aguardando conexão de rede.`);
+      } finally {
+        setIsSyncing(false);
+      }
+    } else {
+      showToast('info', 'Lote Salvo', `${newFishermen.length} pescador(es) salvo(s) localmente no navegador.`);
+    }
+  }, [isSupabaseConfigured, showToast]);
+
   const updateFisherman = useCallback(async (updatedFisher: Fisherman) => {
     setFishermen(prev => prev.map(f => f.id === updatedFisher.id ? updatedFisher : f));
 
@@ -1349,6 +1371,7 @@ const App: React.FC = () => {
                 <CadastrosTab 
                   fishermen={fishermen}
                   onAddFisherman={addFisherman}
+                  onAddMultipleFishermen={saveMultipleFishermen}
                   onDeleteFisherman={deleteFisherman}
                   onUpdateFisherman={updateFisherman}
                   speciesList={speciesList}

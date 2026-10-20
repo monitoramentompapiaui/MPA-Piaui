@@ -86,12 +86,16 @@ export interface Fisherman {
   id: string;
   name: string;
   location: string;
+  portoOrigem?: string; // "Porto de origem" (entrada em lote)
+  owner?: string; // "Proprietário"
+  fisherCount?: string; // "Nº de pescadores"
   gearType: string; // Suporta digitação livre (arte específica)
   gearTypeGeneral?: string; // Arte de pesca geral preenchida automaticamente
   vesselType: string;
   vesselName?: string;
   propulsionType: string;
   gearDetails: GearDetails;
+  pescaSubmarina?: string; // "Pesca Submarina" (Sim/Não)
 }
 
 export interface Species {

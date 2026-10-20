@@ -28,114 +28,72 @@ interface Props {
 interface GridRow {
   id: string;
   selected: boolean;
-  name: string;
   location: string;
-  portoOrigem: string;
-  vesselType: string;
-  vesselName: string;
   owner: string;
-  fisherCount: string;
+  vesselName: string;
+  portoOrigem: string;
   gearType: string;
-  hookSize: string;
-  hookCount: string;
-  linhaLength: string;
   redeLength: string;
   redeHeight: string;
   redeMesh: string;
-  tarrafaLength: string;
-  tarrafaMesh: string;
-  jequiCount: string;
-  jequiBleedingMesh: string;
-  fisherCount2: string;
-  rendimentoPolpa: string;
-  fisherCount3: string;
-  manzuas: string;
-  numCordas2: string;
-  fornecedores: string;
-  catadores: string;
-  numCordas: string;
-  fornecedores2: string;
-  coletores: string;
-  numSacos: string;
+  hookSize: string;
+  hookCount: string;
+  linhaLength: string;
+  pescaSubmarina: string;
+  cataManual: string;
   arrastoNetLength: string;
   arrastoMouthHeight: string;
   arrastoMesh: string;
   covos: string;
-  pescaSubmarina: string;
+  manzuas: string;
+  jequiCount: string;
+  jequiBleedingMesh: string;
 }
 
 const FIELDS: (keyof GridRow)[] = [
-  'name',
   'location',
-  'portoOrigem',
-  'vesselType',
-  'vesselName',
   'owner',
-  'fisherCount',
+  'vesselName',
+  'portoOrigem',
   'gearType',
-  'hookSize',
-  'hookCount',
-  'linhaLength',
   'redeLength',
   'redeHeight',
   'redeMesh',
-  'tarrafaLength',
-  'tarrafaMesh',
-  'jequiCount',
-  'jequiBleedingMesh',
-  'fisherCount2',
-  'rendimentoPolpa',
-  'fisherCount3',
-  'manzuas',
-  'numCordas2',
-  'fornecedores',
-  'catadores',
-  'numCordas',
-  'fornecedores2',
-  'coletores',
-  'numSacos',
+  'hookSize',
+  'hookCount',
+  'linhaLength',
+  'pescaSubmarina',
+  'cataManual',
   'arrastoNetLength',
   'arrastoMouthHeight',
   'arrastoMesh',
   'covos',
-  'pescaSubmarina'
+  'manzuas',
+  'jequiCount',
+  'jequiBleedingMesh'
 ];
 
 const FIELD_TRANSLATIONS: Record<string, string> = {
-  name: 'Nome do Pescador',
-  location: 'Localidade / Porto',
-  portoOrigem: 'Porto de Origem',
-  vesselType: 'Tipo da embarcação',
-  vesselName: 'Nome da embarcação',
+  location: 'Localidade',
   owner: 'Proprietário',
-  fisherCount: 'Nº de pescadores',
-  gearType: 'Arte de Pesca',
-  hookSize: 'Linha de Mão - Tamanho do Anzol',
-  hookCount: 'Linha de Mão - Nº de anzóis',
-  linhaLength: 'Linha de Mão - Comprimento da linha (m)',
-  redeLength: 'Rede de Emalhe - Comprimento da Rede (m)',
-  redeHeight: 'Rede de Emalhe - Altura da rede (m)',
-  redeMesh: 'Rede de Emalhe - Tamanho da Malha (mm)',
-  tarrafaLength: 'Tarrafa - Comprimento da Tarrafa (m)',
-  tarrafaMesh: 'Tarrafa - Tamanho da Malha (mm)',
-  jequiCount: 'Jequi - Camarão - Nº de Jequis',
-  jequiBleedingMesh: 'Jequi - Camarão - Malha da sanga (cm)',
-  fisherCount2: 'Landuá - Mariscos - Nº de Pescadores',
-  rendimentoPolpa: 'Landuá - Mariscos - Peso do marisco com casca',
-  fisherCount3: 'Manzuá - Sirí - Nº de Pescadores',
-  manzuas: 'Manzuá - Sirí - Nº de Manzuás',
-  numCordas2: 'Manzuá - Sirí - N° Cordas',
-  fornecedores: 'Caranguejo - N° de fornecedores',
-  catadores: 'Caranguejo - N° de catadores',
-  numCordas: 'Caranguejo - N° de cordas',
-  fornecedores2: 'Ostra - N° de fornecedores',
-  coletores: 'Ostra - N° de coletores',
-  numSacos: 'Ostra - N° de sacos',
-  arrastoNetLength: 'Arrasto de Fundo - Camarão (LC) - Comprimento da Rede (m)',
-  arrastoMouthHeight: 'Arrasto de Fundo - Camarão (LC) - Altura da Boca da Rede (m)',
-  arrastoMesh: 'Arrasto de Fundo - Camarão (LC) - Tamanho da Malha (mm)',
-  covos: 'Covo - Lagosta - Nº de Covos',
-  pescaSubmarina: 'Pesca Submarina'
+  vesselName: 'Nome da embarcação',
+  portoOrigem: 'Porto de origem',
+  gearType: 'Arte de pesca',
+  redeLength: 'Rede de emalhe - Comp da rede (m)',
+  redeHeight: 'Rede de emalhe - Alt. da rede (m)',
+  redeMesh: 'Rede de emalhe - Tam. da malha (m)',
+  hookSize: 'Linha de mão - Tam. do anzol',
+  hookCount: 'Linha de mão - N° de anzol',
+  linhaLength: 'Linha de mão - comp. da linha (m)',
+  pescaSubmarina: 'Pesca submarina',
+  cataManual: 'Cata manual',
+  arrastoNetLength: 'Arrasto de fundo - Comp. da rede (m)',
+  arrastoMouthHeight: 'Arrasto de fundo - Alt. da boca da rede (m)',
+  arrastoMesh: 'Arrasto de fundo - Tam. da malha (mm)',
+  covos: 'Covo - N° de covos',
+  manzuas: 'Manzuá - N° de manzuás',
+  jequiCount: 'Jequi - N° de jequis',
+  jequiBleedingMesh: 'Jequi - Malha de sanga (mm)'
 };
 
 const TableRow = memo(({ 
@@ -183,7 +141,7 @@ const TableRow = memo(({
       fontSize: `${fontSize}px`,
       padding: `${padTopBottom}px ${padLeftRight}px`,
       fontStyle: 'normal' as const,
-      fontWeight: (field === 'name' ? 'bold' : 'normal') as string,
+      fontWeight: (field === 'owner' ? 'bold' : 'normal') as string,
     };
   };
 
@@ -256,7 +214,7 @@ const TableRow = memo(({
               onKeyDown={handleKeyDown}
               list={datalistId}
               className={`w-full bg-transparent outline-none focus:bg-blue-100/70 dark:focus:bg-blue-950/30 focus:ring-inset focus:ring-2 focus:ring-blue-600 text-slate-800 dark:text-slate-100 ${
-                field === 'name' ? 'font-bold text-blue-700 dark:text-blue-400' : ''
+                field === 'owner' ? 'font-bold text-blue-700 dark:text-blue-400' : ''
               }`}
               style={getInputStyle(field)}
             />
@@ -324,40 +282,26 @@ const BulkFishermenImportGrid: React.FC<Props> = ({ onSave, onCancel }) => {
     return { 
       id: generateId(), 
       selected: false, 
-      name: '', 
       location: '', 
-      portoOrigem: '',
-      vesselType: '', 
-      vesselName: '',
       owner: '',
-      fisherCount: '',
+      vesselName: '',
+      portoOrigem: '',
       gearType: '', 
-      hookSize: '',
-      hookCount: '',
-      linhaLength: '',
       redeLength: '',
       redeHeight: '',
       redeMesh: '',
-      tarrafaLength: '',
-      tarrafaMesh: '',
-      jequiCount: '',
-      jequiBleedingMesh: '',
-      fisherCount2: '',
-      rendimentoPolpa: '',
-      fisherCount3: '',
-      manzuas: '',
-      numCordas2: '',
-      fornecedores: '',
-      catadores: '',
-      numCordas: '',
-      fornecedores2: '',
-      coletores: '',
-      numSacos: '',
+      hookSize: '',
+      hookCount: '',
+      linhaLength: '',
+      pescaSubmarina: '',
+      cataManual: '',
       arrastoNetLength: '',
       arrastoMouthHeight: '',
       arrastoMesh: '',
       covos: '',
-      pescaSubmarina: ''
+      manzuas: '',
+      jequiCount: '',
+      jequiBleedingMesh: ''
     };
   }
 
@@ -408,7 +352,7 @@ const BulkFishermenImportGrid: React.FC<Props> = ({ onSave, onCancel }) => {
             if (targetFieldIdx < FIELDS.length) {
               const field = FIELDS[targetFieldIdx];
               const val = columns[j].trim();
-              updatedRow[field] = val;
+              (updatedRow as any)[field] = val;
             }
           }
           nextRows[targetRowIdx] = updatedRow;
@@ -424,9 +368,9 @@ const BulkFishermenImportGrid: React.FC<Props> = ({ onSave, onCancel }) => {
   const handleFinalize = async () => {
     const validRows = rows
       .map((row, index) => ({ row, index }))
-      .filter(({ row }) => row.name.trim() && row.location.trim());
+      .filter(({ row }) => row.owner.trim() && row.location.trim());
     if (validRows.length === 0) {
-      alert("Erro: Preencha pelo menos o Nome do Pescador e a Localidade / Porto.");
+      alert("Erro: Preencha pelo menos o Proprietário e a Localidade.");
       return;
     }
 
@@ -439,11 +383,10 @@ const BulkFishermenImportGrid: React.FC<Props> = ({ onSave, onCancel }) => {
       const processedChunk = chunk.map(({ row }) => {
         const gearDetails: any = {};
 
-        const lengthVal = (row.linhaLength || row.redeLength || row.tarrafaLength || '').trim();
+        const lengthVal = (row.linhaLength || row.redeLength || '').trim();
         if (lengthVal !== '') gearDetails.length = lengthVal;
         if (row.redeHeight.trim() !== '') gearDetails.height = row.redeHeight.trim();
-        const meshVal = (row.redeMesh || row.tarrafaMesh || '').trim();
-        if (meshVal !== '') gearDetails.meshSize = meshVal;
+        if (row.redeMesh.trim() !== '') gearDetails.meshSize = row.redeMesh.trim();
         if (row.hookCount.trim() !== '') gearDetails.hookCount = row.hookCount.trim();
         if (row.hookSize.trim() !== '') gearDetails.hookSize = row.hookSize.trim();
         if (row.jequiCount.trim() !== '') gearDetails.trapCount = row.jequiCount.trim();
@@ -453,37 +396,18 @@ const BulkFishermenImportGrid: React.FC<Props> = ({ onSave, onCancel }) => {
         if (row.arrastoMesh.trim() !== '') gearDetails.trawlMeshSize = row.arrastoMesh.trim();
         if (row.covos.trim() !== '') gearDetails.covos = row.covos.trim();
         if (row.manzuas.trim() !== '') gearDetails.manzuas = row.manzuas.trim();
-
-        // Preserva os demais dados das artes de pesca copiados da planilha de fichas
-        const meta: Record<string, string> = {
-          _fisherCount2: row.fisherCount2.trim(),
-          _rendimentoPolpa: row.rendimentoPolpa.trim(),
-          _fisherCount3: row.fisherCount3.trim(),
-          _numCordas2: row.numCordas2.trim(),
-          _fornecedores: row.fornecedores.trim(),
-          _catadores: row.catadores.trim(),
-          _numCordas: row.numCordas.trim(),
-          _fornecedores2: row.fornecedores2.trim(),
-          _coletores: row.coletores.trim(),
-          _numSacos: row.numSacos.trim()
-        };
-        Object.keys(meta).forEach(key => {
-          if (meta[key] !== '') {
-            (gearDetails as any)[key] = meta[key];
-          }
-        });
+        if (row.cataManual.trim() !== '') gearDetails.cataManual = row.cataManual.trim();
 
         const gearType = row.gearType.trim() !== '' ? standardizeText(row.gearType) : 'Tarrafa';
 
         return {
           id: generateId(),
-          name: standardizeText(row.name),
+          name: standardizeText(row.owner),
           location: standardizeText(row.location),
           portoOrigem: row.portoOrigem.trim() !== '' ? standardizeText(row.portoOrigem) : undefined,
-          vesselType: standardizeText(row.vesselType),
           vesselName: row.vesselName.trim() !== '' ? standardizeText(row.vesselName) : undefined,
-          owner: row.owner.trim() !== '' ? standardizeText(row.owner) : undefined,
-          fisherCount: row.fisherCount.trim() !== '' ? row.fisherCount.trim() : undefined,
+          owner: standardizeText(row.owner),
+          vesselType: '',
           propulsionType: '',
           gearType,
           gearTypeGeneral: getGeneralGearType(gearType),

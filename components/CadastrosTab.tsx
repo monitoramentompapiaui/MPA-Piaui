@@ -22,7 +22,9 @@ import {
   RefreshCw,
   TableProperties,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  CheckSquare,
+  Square
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
@@ -38,6 +40,7 @@ interface Props {
   onAddFisherman: (fisherman: Fisherman) => void;
   onAddMultipleFishermen: (fishermen: Fisherman[]) => void;
   onDeleteFisherman: (id: string) => void;
+  onDeleteMultipleFishermen: (ids: string[]) => void;
   onUpdateFisherman: (fisherman: Fisherman) => void;
   speciesList: Species[];
   onAddSpecies: (species: Species) => void;
@@ -49,6 +52,7 @@ const CadastrosTab: React.FC<Props> = ({
   onAddFisherman,
   onAddMultipleFishermen,
   onDeleteFisherman,
+  onDeleteMultipleFishermen,
   onUpdateFisherman,
   speciesList,
   onAddSpecies,
@@ -63,6 +67,7 @@ const CadastrosTab: React.FC<Props> = ({
   const [filterFishermanLocation, setFilterFishermanLocation] = useState('');
   const [filterFishermanGear, setFilterFishermanGear] = useState('');
   const [expandedFishermanId, setExpandedFishermanId] = useState<string | null>(null);
+  const [selectedFishermenIds, setSelectedFishermenIds] = useState<Set<string>>(new Set());
 
   // Additional Species Filters
   const [filterSpeciesPhoto, setFilterSpeciesPhoto] = useState<'all' | 'with' | 'without'>('all');
@@ -1218,6 +1223,37 @@ const CadastrosTab: React.FC<Props> = ({
     });
   }, [fishermen, fishermanSearch, filterFishermanLocation, filterFishermanGear]);
 
+  const toggleFishermanSelect = (id: string) => {
+    setSelectedFishermenIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const allFishermenSelected = filteredFishermen.length > 0 && filteredFishermen.every(f => selectedFishermenIds.has(f.id));
+
+  const toggleSelectAllFishermen = () => {
+    setSelectedFishermenIds(prev => {
+      const next = new Set(prev);
+      if (allFishermenSelected) {
+        filteredFishermen.forEach(f => next.delete(f.id));
+      } else {
+        filteredFishermen.forEach(f => next.add(f.id));
+      }
+      return next;
+    });
+  };
+
+  const handleBulkDeleteFishermen = () => {
+    if (selectedFishermenIds.size === 0) return;
+    if (confirm(`Tem certeza que deseja excluir os ${selectedFishermenIds.size} pescador(es) selecionado(s) permanentemente? Esta ação não pode ser desfeita.`)) {
+      onDeleteMultipleFishermen(Array.from(selectedFishermenIds));
+      setSelectedFishermenIds(new Set());
+    }
+  };
+
   const filteredSpeciesList = useMemo(() => {
     let list = speciesList.filter(s => {
       const q = speciesSearch.toLowerCase();
@@ -1467,10 +1503,24 @@ const CadastrosTab: React.FC<Props> = ({
                   <h3 className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
                     <Search size={14} className="text-slate-500" /> Filtros de Pescadores
                   </h3>
-                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
                     {filteredFishermen.length > 0 && (
                       <div className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 px-3 py-1.5 rounded-full border border-blue-100 dark:border-blue-900/30 uppercase">
                         {filteredFishermen.length} {filteredFishermen.length === 1 ? 'Pescador' : 'Pescadores'}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={toggleSelectAllFishermen}
+                      disabled={filteredFishermen.length === 0}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-50 text-xs font-black rounded-full border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
+                    >
+                      {allFishermenSelected ? <CheckSquare size={13} className="text-blue-600" /> : <Square size={13} />}
+                      {allFishermenSelected ? 'Desmarcar Todos' : 'Selecionar Todos'}
+                    </button>
+                    {selectedFishermenIds.size > 0 && (
+                      <div className="text-xs font-black text-white bg-blue-600 px-3 py-1.5 rounded-full animate-in zoom-in uppercase">
+                        {selectedFishermenIds.size} selecionado(s)
                       </div>
                     )}
                     <button
@@ -1589,6 +1639,7 @@ const CadastrosTab: React.FC<Props> = ({
                   {filteredFishermen.map(f => {
                     const isIncomplete = isFishermanIncomplete(f);
                     const isExpanded = expandedFishermanId === f.id;
+                    const isSelected = selectedFishermenIds.has(f.id);
                     const locationMissing = !f.location || f.location.trim() === '' || f.location.trim() === '-' || f.location.trim() === 'Não informado';
                     const missingSpan = <span className="inline-flex items-center gap-1 text-[8px] font-extrabold text-red-600 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/30 px-1 py-0.5 rounded tracking-wider animate-pulse">⚠️ FALTANDO</span>;
                     const isTarrafa = f.gearType.toLowerCase() === 'tarrafa';
@@ -1607,12 +1658,22 @@ const CadastrosTab: React.FC<Props> = ({
                     if ((f.gearDetails as any)?.manzuas) gearSpecs.push({ label: 'Manzuás', value: String((f.gearDetails as any).manzuas) });
                     return (
                       <div key={f.id} className={`group rounded-2xl border transition-all overflow-hidden ${
-                        isIncomplete
-                          ? 'border-red-300 bg-red-50/30 dark:bg-red-950/10 shadow-sm hover:bg-red-50/45'
-                          : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md'
+                        isSelected
+                          ? 'border-blue-400 bg-blue-50/30 dark:bg-blue-950/20'
+                          : isIncomplete
+                            ? 'border-red-300 bg-red-50/30 dark:bg-red-950/10 shadow-sm hover:bg-red-50/45'
+                            : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md'
                       }`}>
                         <div className="p-5 flex items-center justify-between gap-4">
                           <div className="flex items-center gap-5 flex-1 min-w-0">
+                            <button
+                              type="button"
+                              onClick={() => toggleFishermanSelect(f.id)}
+                              className={`transition-colors p-1 shrink-0 ${isSelected ? 'text-blue-600' : 'text-slate-300 dark:text-slate-500 hover:text-slate-400 dark:hover:text-slate-300'}`}
+                              title={isSelected ? 'Desmarcar pescador' : 'Selecionar pescador'}
+                            >
+                              {isSelected ? <CheckSquare size={22} /> : <Square size={22} />}
+                            </button>
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
                               isIncomplete
                                 ? 'bg-red-500 text-white shadow shadow-red-200 dark:shadow-none'
@@ -1742,6 +1803,31 @@ const CadastrosTab: React.FC<Props> = ({
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Floating bulk action bar for fishermen */}
+      {activeSubTab === 'fishermen' && selectedFishermenIds.size > 0 && (
+        <div className="fixed bottom-4 sm:bottom-10 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-[55] animate-in slide-in-from-bottom duration-300 max-w-full">
+          <div className="bg-slate-900 text-white p-1.5 sm:p-3 rounded-2xl sm:rounded-3xl shadow-2xl flex items-center justify-between sm:justify-start gap-2 sm:gap-4 border border-slate-700">
+            <div className="px-3 sm:px-4 py-1 border-r border-slate-700/60 shrink-0">
+              <span className="text-xs sm:text-sm font-black text-blue-400">{selectedFishermenIds.size}</span>
+              <span className="ml-1 sm:ml-2 text-[10px] font-bold text-slate-400 uppercase">Itens</span>
+            </div>
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-grow sm:flex-grow-0 justify-end">
+              <button
+                type="button"
+                onClick={handleBulkDeleteFishermen}
+                className="flex items-center gap-1 bg-red-600 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all hover:bg-red-700"
+              >
+                <Trash2 size={14} />
+                <span>Excluir <span className="hidden sm:inline">Selecionados</span></span>
+              </button>
+              <button type="button" onClick={() => setSelectedFishermenIds(new Set())} className="p-1.5 sm:p-2.5 text-slate-400 hover:text-white transition-colors shrink-0">
+                <X size={16} />
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

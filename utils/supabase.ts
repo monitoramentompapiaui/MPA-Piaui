@@ -704,6 +704,52 @@ export const deleteSupabaseFisherman = async (id: string): Promise<void> => {
   }
 };
 
+export const deleteMultipleSupabaseFishermen = async (ids: string[]): Promise<void> => {
+  if (!supabase || ids.length === 0) return;
+
+  try {
+    const validUUIDs = ids.filter(isValidUUID);
+    const nonUUIDs = ids.filter(id => !isValidUUID(id));
+
+    if (validUUIDs.length > 0) {
+      const CHUNK_SIZE = 100;
+      for (let i = 0; i < validUUIDs.length; i += CHUNK_SIZE) {
+        const chunk = validUUIDs.slice(i, i + CHUNK_SIZE);
+        const { error } = await supabase
+          .from('fishermen')
+          .delete()
+          .in('id', chunk);
+
+        if (error) {
+          console.error('Erro ao excluir lote de pescadores no Supabase:', error);
+          throw error;
+        }
+      }
+    }
+
+    if (nonUUIDs.length > 0) {
+      for (const id of nonUUIDs) {
+        try {
+          const { error } = await supabase
+            .from('fishermen')
+            .delete()
+            .eq('id', id);
+
+          if (error && error.code !== '22P02') {
+            console.error('Erro ao excluir pescador não-UUID no Supabase:', error);
+            throw error;
+          }
+        } catch (err) {
+          // Ignora erros de formato UUID (banco UUID ignora chaves text)
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Falha de conexão com o Supabase ao excluir lote de pescadores:', err);
+    throw err;
+  }
+};
+
 // --- API Helpers for Species (Espécies) ---
 
 export const getSupabaseSpecies = async (): Promise<Species[]> => {

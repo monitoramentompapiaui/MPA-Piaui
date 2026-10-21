@@ -67,6 +67,7 @@ import {
   insertMultipleSupabaseFishermen,
   updateSupabaseFisherman,
   deleteSupabaseFisherman,
+  deleteMultipleSupabaseFishermen,
   getSupabaseSpecies,
   insertSupabaseSpecies,
   updateSupabaseSpecies,
@@ -777,6 +778,27 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const deleteMultipleFishermen = useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return;
+    const idSet = new Set(ids);
+    setFishermen(prev => prev.filter(f => !idSet.has(f.id)));
+
+    if (isSupabaseConfigured) {
+      try {
+        setIsSyncing(true);
+        setSyncError(null);
+        await deleteMultipleSupabaseFishermen(ids);
+        showToast('success', 'Exclusão Concluída', `${ids.length} pescador(es) excluído(s) com sucesso.`);
+      } catch (err: any) {
+        console.error("Erro na exclusão em lote de pescadores:", err);
+        setSyncError("Lote de pescadores excluído apenas localmente (erro Supabase).");
+        showToast('warning', 'Modo Offline', `${ids.length} pescador(es) excluído(s) localmente. Aguardando conexão de rede.`);
+      } finally {
+        setIsSyncing(false);
+      }
+    }
+  }, [isSupabaseConfigured, showToast]);
+
   const addSpecies = useCallback(async (newSpec: Species) => {
     setSpeciesList(prev => {
       const exists = prev.some(s => s.id === newSpec.id);
@@ -1373,6 +1395,7 @@ const App: React.FC = () => {
                   onAddFisherman={addFisherman}
                   onAddMultipleFishermen={saveMultipleFishermen}
                   onDeleteFisherman={deleteFisherman}
+                  onDeleteMultipleFishermen={deleteMultipleFishermen}
                   onUpdateFisherman={updateFisherman}
                   speciesList={speciesList}
                   onAddSpecies={addSpecies}

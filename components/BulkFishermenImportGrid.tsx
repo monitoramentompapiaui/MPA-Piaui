@@ -383,20 +383,56 @@ const BulkFishermenImportGrid: React.FC<Props> = ({ onSave, onCancel }) => {
       const processedChunk = chunk.map(({ row }) => {
         const gearDetails: any = {};
 
-        const lengthVal = (row.linhaLength || row.redeLength || '').trim();
-        if (lengthVal !== '') gearDetails.length = lengthVal;
-        if (row.redeHeight.trim() !== '') gearDetails.height = row.redeHeight.trim();
-        if (row.redeMesh.trim() !== '') gearDetails.meshSize = row.redeMesh.trim();
-        if (row.hookCount.trim() !== '') gearDetails.hookCount = row.hookCount.trim();
-        if (row.hookSize.trim() !== '') gearDetails.hookSize = row.hookSize.trim();
-        if (row.jequiCount.trim() !== '') gearDetails.trapCount = row.jequiCount.trim();
-        if (row.jequiBleedingMesh.trim() !== '') gearDetails.jequiBleedingMesh = row.jequiBleedingMesh.trim();
-        if (row.arrastoNetLength.trim() !== '') gearDetails.netLength = row.arrastoNetLength.trim();
-        if (row.arrastoMouthHeight.trim() !== '') gearDetails.mouthHeight = row.arrastoMouthHeight.trim();
-        if (row.arrastoMesh.trim() !== '') gearDetails.trawlMeshSize = row.arrastoMesh.trim();
-        if (row.covos.trim() !== '') gearDetails.covos = row.covos.trim();
-        if (row.manzuas.trim() !== '') gearDetails.manzuas = row.manzuas.trim();
-        if (row.cataManual.trim() !== '') gearDetails.cataManual = row.cataManual.trim();
+        // Normaliza valores: ignora placeholders de planilha ("-", "n/a", "sem", "--", etc.)
+        const clean = (v: string | undefined): string => {
+          const t = (v || '').trim();
+          if (t === '' || /^[-–—]+$/.test(t) || /^n\/?a$/i.test(t) || /^sem$/i.test(t)) return '';
+          return t;
+        };
+
+        // --- Rede de emalhe ---
+        const redeLengthVal = clean(row.redeLength);
+        if (redeLengthVal !== '') gearDetails.length = redeLengthVal;
+        const redeHeightVal = clean(row.redeHeight);
+        if (redeHeightVal !== '') gearDetails.height = redeHeightVal;
+        const redeMeshVal = clean(row.redeMesh);
+        if (redeMeshVal !== '') gearDetails.meshSize = redeMeshVal;
+        // Preserva a coluna de rede especificamente para exportação fiel
+        if (redeLengthVal !== '') gearDetails.redeLength = redeLengthVal;
+        if (redeHeightVal !== '') gearDetails.redeHeight = redeHeightVal;
+        if (redeMeshVal !== '') gearDetails.redeMesh = redeMeshVal;
+
+        // --- Linha de mão ---
+        const linhaLengthVal = clean(row.linhaLength);
+        if (linhaLengthVal !== '') gearDetails.linhaLength = linhaLengthVal;
+        const hookSizeVal = clean(row.hookSize);
+        if (hookSizeVal !== '') gearDetails.hookSize = hookSizeVal;
+        const hookCountVal = clean(row.hookCount);
+        if (hookCountVal !== '') gearDetails.hookCount = hookCountVal;
+
+        // --- Arrasto de fundo ---
+        const arrastoNetVal = clean(row.arrastoNetLength);
+        if (arrastoNetVal !== '') gearDetails.netLength = arrastoNetVal;
+        const arrastoMouthVal = clean(row.arrastoMouthHeight);
+        if (arrastoMouthVal !== '') gearDetails.mouthHeight = arrastoMouthVal;
+        const arrastoMeshVal = clean(row.arrastoMesh);
+        if (arrastoMeshVal !== '') gearDetails.trawlMeshSize = arrastoMeshVal;
+
+        // --- Armadilhas / Covo / Manzuá ---
+        const covosVal = clean(row.covos);
+        if (covosVal !== '') gearDetails.covos = covosVal;
+        const manzuasVal = clean(row.manzuas);
+        if (manzuasVal !== '') gearDetails.manzuas = manzuasVal;
+
+        // --- Jequi ---
+        const jequiCountVal = clean(row.jequiCount);
+        if (jequiCountVal !== '') gearDetails.trapCount = jequiCountVal;
+        const jequiMeshVal = clean(row.jequiBleedingMesh);
+        if (jequiMeshVal !== '') gearDetails.jequiBleedingMesh = jequiMeshVal;
+
+        // --- Demais ---
+        const cataManualVal = clean(row.cataManual);
+        if (cataManualVal !== '') gearDetails.cataManual = cataManualVal;
 
         const gearType = row.gearType.trim() !== '' ? standardizeText(row.gearType) : 'Tarrafa';
 

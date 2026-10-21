@@ -68,6 +68,11 @@ export interface GearDetails {
   trawlMeshSize?: string;
   covos?: string; // "Nº de Covos"
   manzuas?: string; // "Nº de Manzuás"
+  cataManual?: string; // "Cata manual"
+  linhaLength?: string; // "Linha de mão - comp. da linha (m)"
+  redeLength?: string; // "Rede de emalhe - Comp da rede (m)"
+  redeHeight?: string; // "Rede de emalhe - Alt. da rede (m)"
+  redeMesh?: string; // "Rede de emalhe - Tam. da malha"
 }
 
 export interface LandingForm {

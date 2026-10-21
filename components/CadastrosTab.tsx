@@ -285,22 +285,28 @@ const CadastrosTab: React.FC<Props> = ({
     if (filteredFishermen.length === 0) return;
     const rows = filteredFishermen.map((f, idx) => ({
       '#': idx + 1,
-      'Nome': f.name || '-',
       'Localidade': f.location || '-',
-      'Nome da Embarcação': f.vesselName || '-',
-      'Tipo de Propulsão': f.propulsionType || '-',
-      'Arte de Pesca': f.gearType || '-',
+      'Proprietário': f.name || f.owner || '-',
+      'Nome da embarcação': f.vesselName || '-',
+      'Porto de origem': f.portoOrigem || '-',
+      'Arte de pesca': f.gearType || '-',
       'Categoria Geral': f.gearTypeGeneral || '-',
-      'Tamanho da Malha': f.gearDetails?.meshSize || '-',
-      'Altura (m)': f.gearDetails?.height || '-',
-      'Comprimento (m)': f.gearDetails?.length || '-',
-      'N° de Anzóis': f.gearDetails?.hookCount || '-',
-      'Tamanho do Anzol': f.gearDetails?.hookSize || '-',
-      'N° de Armadilhas': f.gearDetails?.trapCount || '-',
-      'Malha de Sangra (cm)': f.gearDetails?.jequiBleedingMesh || '-',
-      'Comp. da Rede (m)': f.gearDetails?.netLength || '-',
-      'Altura da Boca (m)': f.gearDetails?.mouthHeight || '-',
-      'Malha de Arrasto (mm)': f.gearDetails?.trawlMeshSize || '-'
+      'Rede de emalhe - Comp da rede (m)': f.gearDetails?.redeLength || f.gearDetails?.length || '-',
+      'Rede de emalhe - Alt. da rede (m)': f.gearDetails?.redeHeight || f.gearDetails?.height || '-',
+      'Rede de emalhe - Tam. da malha (m)': f.gearDetails?.redeMesh || f.gearDetails?.meshSize || '-',
+      'Linha de mão - Tam. do anzol': f.gearDetails?.hookSize || '-',
+      'Linha de mão - N° de anzol': f.gearDetails?.hookCount || '-',
+      'Linha de mão - comp. da linha (m)': f.gearDetails?.linhaLength || '-',
+      'Pesca submarina': f.pescaSubmarina || '-',
+      'Cata manual': f.gearDetails?.cataManual || '-',
+      'Arrasto de fundo - Comp. da rede (m)': f.gearDetails?.netLength || '-',
+      'Arrasto de fundo - Alt. da boca da rede (m)': f.gearDetails?.mouthHeight || '-',
+      'Arrasto de fundo - Tam. da malha (mm)': f.gearDetails?.trawlMeshSize || '-',
+      'Covo - N° de covos': f.gearDetails?.covos || '-',
+      'Manzuá - N° de manzuás': f.gearDetails?.manzuas || '-',
+      'Jequi - N° de jequis': f.gearDetails?.trapCount || '-',
+      'Jequi - Malha de sanga (mm)': f.gearDetails?.jequiBleedingMesh || '-',
+      'Tipo de Propulsão': f.propulsionType || '-'
     }));
     const worksheet = XLSX.utils.json_to_sheet(rows);
     const workbook = XLSX.utils.book_new();

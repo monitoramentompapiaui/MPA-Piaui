@@ -1,8 +1,8 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.mpa.piaui',
-  appName: 'MPA Piauí',
+  appId: 'com.infopesca.app',
+  appName: 'Infopesca',
   webDir: 'dist',
   server: {
     androidScheme: 'https',

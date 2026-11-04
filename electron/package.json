@@ -1,0 +1,52 @@
+{
+  "name": "infopesca-desktop",
+  "version": "1.0.1",
+  "description": "Infopesca - Monitoramento de Desembarques Pesqueiros",
+  "main": "main.js",
+  "scripts": {
+    "electron": "electron .",
+    "dist": "electron-builder --win --x64"
+  },
+  "build": {
+    "appId": "com.infopesca.app",
+    "productName": "Infopesca",
+    "compression": "store",
+    "directories": {
+      "output": "release",
+      "app": "."
+    },
+    "files": [
+      "main.js",
+      "package.json",
+      "icon.png",
+      "icon.ico"
+    ],
+    "extraResources": [
+      {
+        "from": "../dist",
+        "to": "dist",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "shortcutName": "Infopesca"
+    }
+  },
+  "devDependencies": {
+    "electron": "^36.0.0",
+    "electron-builder": "^26.0.0"
+  }
+}

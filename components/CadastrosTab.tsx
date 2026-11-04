@@ -180,7 +180,7 @@ const CadastrosTab: React.FC<Props> = ({
         doc.setFont('helvetica', 'italic');
         doc.setFontSize(8);
         doc.setTextColor(148, 163, 184); // slate-400
-        doc.text('MPA Piauí • Sistema de Monitoramento de Desembarques Pesqueiros', 15, 287);
+        doc.text('Infopesca • Sistema de Monitoramento de Desembarques Pesqueiros', 15, 287);
       };
 
       drawHeader(pageNum);

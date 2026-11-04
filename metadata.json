@@ -1,6 +1,6 @@
 {
-  "name": "MPA Piauí",
-  "description": "Sistema de monitoramento de desembarques pesqueiros do Piauí com suporte completo offline.",
+  "name": "Infopesca",
+  "description": "Sistema de monitoramento de desembarques pesqueiros com suporte completo offline.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

@@ -32,7 +32,7 @@ interface LoginFormProps {
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
-  const [email, setEmail] = useState<string>('');
+  const [email, setEmail] = useState<string>(() => localStorage.getItem('fishery_last_email') || '');
   const [password, setPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -68,6 +68,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
         const offlineHash = computeOfflineHash(email, password);
         localStorage.setItem(`fishery_offline_hash_${emailLower}`, offlineHash);
         localStorage.setItem(`fishery_offline_user_${emailLower}`, JSON.stringify(data.user));
+        localStorage.setItem('fishery_cached_user', JSON.stringify(data.user));
+        localStorage.setItem('fishery_last_email', email.trim());
 
         onLoginSuccess(data.user);
       } else {
@@ -153,25 +155,25 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
             <div className="inline-flex mb-4 transition-all duration-300 hover:scale-105">
               <img 
                 referrerPolicy="no-referrer"
-                src={typeof window !== 'undefined' && (localStorage.getItem('fishery_theme') === 'dark' || document.documentElement.classList.contains('dark')) ? "/images/Design sem nome (2).png" : "/images/logo.png"} 
-                alt="Logo MPA Piauí" 
-                className="h-16 w-auto object-contain"
+                src="/images/logo.png" 
+                alt="Logo Infopesca" 
+                className="h-20 w-auto object-contain"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   const parent = e.currentTarget.parentElement;
                   if (parent) {
                     const fallback = document.createElement('div');
                     fallback.className = 'text-blue-600 font-display font-black text-2xl tracking-wider';
-                    fallback.innerText = 'MPA PIAUÍ';
+                    fallback.innerText = 'INFOPESCA';
                     parent.appendChild(fallback);
                   }
                 }}
               />
             </div>
             
-            <h3 className="font-display text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">MPA Piauí</h3>
-            <p className="text-xs font-semibold text-slate-550 dark:text-slate-400 mt-1 max-w-[300px]">
-              Projeto Monitoramento de Desembarques Pesqueiros do Piauí
+            <h3 className="font-display text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">Infopesca</h3>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 max-w-[320px]">
+              Sistema de Monitoramento de Desembarques Pesqueiros
             </p>
           </div>
 

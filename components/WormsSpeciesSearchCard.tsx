@@ -1083,7 +1083,7 @@ export const WormsSpeciesSearchCard: React.FC = () => {
         `).join('')
       : '<p class="no-data font-medium">Nenhuma fonte bibliográfica registrada.</p>';
 
-    const ptTitle = "Sistema de Monitoramento de Desembarque Pesqueiro MPA Piauí";
+    const ptTitle = "Sistema de Monitoramento de Desembarque Pesqueiro Infopesca";
 
     // Build the document
     printWindow.document.write(`
@@ -2486,7 +2486,7 @@ export const WormsSpeciesSearchCard: React.FC = () => {
 
       {/* RODAPÉ DISCRETO */}
       <footer className="border-t border-slate-100 dark:border-slate-800/60 pt-4 mt-6 text-center text-[11px] text-[#6B7280] uppercase tracking-widest font-semibold flex flex-col sm:flex-row items-center justify-between gap-4">
-        <span>Curadoria Científica: MPA Piauí & Lab. de Biologia Marinha</span>
+        <span>Curadoria Científica: Infopesca & Lab. de Biologia Marinha</span>
         <span>World Register of Marine Species • API v1</span>
       </footer>
 

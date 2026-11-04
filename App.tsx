@@ -187,9 +187,18 @@ const App: React.FC = () => {
     localStorage.setItem('fishery_theme', theme);
   }, [theme]);
 
-  // Estados de Autenticação Supabase
-  const [user, setUser] = useState<any>(null);
-  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
+  // Estados de Autenticação Supabase com inicialização resiliente
+  const [user, setUser] = useState<any>(() => {
+    try {
+      const cached = localStorage.getItem('fishery_cached_user');
+      return cached ? JSON.parse(cached) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(() => {
+    return !localStorage.getItem('fishery_cached_user');
+  });
 
   // 1. Carregar cache local de forma assíncrona usando IndexedDB com fallback para LocalStorage
   useEffect(() => {
@@ -1455,7 +1464,7 @@ const App: React.FC = () => {
         <div className="max-w-full mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center sm:text-left">
             <Anchor size={14} className="text-blue-500 hover:rotate-12 transition-transform shrink-0" />
-            <span>Sistema Web de Monitoramento de Desembarque Pesqueiro • MPA Piauí</span>
+            <span>Sistema Web de Monitoramento de Desembarque Pesqueiro • Infopesca</span>
           </div>
           
           <div className="flex items-center gap-3">
@@ -1678,7 +1687,7 @@ create policy "users_own_profile_update" on user_profiles for update to authenti
                 <h2 className="text-xl font-black uppercase flex items-center gap-2 mt-1">
                   <BookOpen size={22} className="text-blue-100 shrink-0" /> Dicas Rápidas de Início
                 </h2>
-                <p className="text-xs text-blue-100">Bem-vindo ao Sistema de Desembarque Pesqueiro MPA Piauí</p>
+                <p className="text-xs text-blue-100">Bem-vindo ao Sistema de Desembarque Pesqueiro Infopesca</p>
               </div>
               <button 
                 type="button" 

@@ -27,7 +27,8 @@ import {
   CheckCircle2,
   X,
   Anchor,
-  FileText
+  FileText,
+  AlertTriangle
 } from 'lucide-react';
 
 interface Props {
@@ -42,6 +43,17 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
   const [successNotification, setSuccessNotification] = useState<string | null>(null);
   const [selectedFishermanId, setSelectedFishermanId] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Validation modal state (prevents native window.alert from locking Electron or Android WebView)
+  const [validationModal, setValidationModal] = useState<{
+    title: string;
+    message: string;
+    fieldId?: string;
+  } | null>(null);
+
+  const showValidation = (title: string, message: string, fieldId?: string) => {
+    setValidationModal({ title, message, fieldId });
+  };
   
   // Form State
   const [idNumber, setIdNumber] = useState<string>('');
@@ -159,18 +171,78 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
   const [scientificName, setScientificName] = useState('');
 
   const fishermanSuggestions = React.useMemo(() => {
-    const query = (ident.fishermanName || '').trim().toLowerCase();
-    if (!query) return [];
-    return fishermen.filter(f => f.name.toLowerCase().includes(query));
-  }, [fishermen, ident.fishermanName]);
+    const rawQuery = (ident.fishermanName || '').trim();
+    const rawLoc = (ident.location || '').trim();
 
-  // Floating autocomplete suggestions for species
+    const normalize = (str: string) =>
+      str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+    const query = normalize(rawQuery);
+    const loc = normalize(rawLoc);
+
+    // Se houver localidade selecionada, restringe a lista APENAS aos pescadores daquela localidade
+    let pool = fishermen;
+    if (loc) {
+      const locFiltered = fishermen.filter(f => f.location && normalize(f.location).includes(loc));
+      if (locFiltered.length > 0) {
+        pool = locFiltered;
+      }
+    }
+
+    if (!query) {
+      // Se não digitou nome ainda mas tem localidade, exibe os pescadores da localidade
+      return loc ? pool.slice(0, 20) : [];
+    }
+
+    return pool
+      .filter(f => normalize(f.name).includes(query))
+      .sort((a, b) => {
+        const aNorm = normalize(a.name);
+        const bNorm = normalize(b.name);
+        const aStarts = aNorm.startsWith(query);
+        const bStarts = bNorm.startsWith(query);
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+        return a.name.localeCompare(b.name);
+      })
+      .slice(0, 20);
+  }, [fishermen, ident.fishermanName, ident.location]);
+
+  // Floating autocomplete suggestions for species calibrado e ordenado por relevância
   const speciesSuggestions = React.useMemo(() => {
-    if (!newItem.species.trim()) return [];
-    const term = newItem.species.toLowerCase().trim();
-    return speciesList.filter(s => 
-      s.commonName.toLowerCase().includes(term)
-    );
+    const rawTerm = (newItem.species || '').trim();
+    if (!rawTerm) return [];
+
+    const normalize = (str: string) =>
+      str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+    const term = normalize(rawTerm);
+    if (!term) return [];
+
+    const matches = speciesList.filter(s => {
+      const common = normalize(s.commonName || '');
+      const sci = normalize(s.scientificName || '');
+      return common.includes(term) || sci.includes(term);
+    });
+
+    return matches.sort((a, b) => {
+      const cA = normalize(a.commonName || '');
+      const cB = normalize(b.commonName || '');
+
+      // 1. Prioriza espécies que começam exatamente com o termo digitado (ex: "Tai..." -> "Tainha")
+      const aStarts = cA.startsWith(term);
+      const bStarts = cB.startsWith(term);
+      if (aStarts && !bStarts) return -1;
+      if (!aStarts && bStarts) return 1;
+
+      // 2. Prioriza palavras que comecem com o termo
+      const aWordStarts = cA.split(/\s+/).some(w => w.startsWith(term));
+      const bWordStarts = cB.split(/\s+/).some(w => w.startsWith(term));
+      if (aWordStarts && !bWordStarts) return -1;
+      if (!aWordStarts && bWordStarts) return 1;
+
+      return a.commonName.localeCompare(b.commonName);
+    }).slice(0, 15);
   }, [speciesList, newItem.species]);
 
   // Filter fishermen matching the typed location
@@ -270,7 +342,7 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
       origPrice = parseFloat(newItem.price) || 0; // price per cord for crab/siri
 
       if (cordasVal <= 0 || exemplaresVal <= 0 || pesoIndVal <= 0 || origPrice <= 0) {
-        alert("Por favor, preencha todos os campos específicos para Caranguejos e Siris (Cordas, Exemplares, Peso individual e Preço por corda).");
+        showValidation("Dados de Caranguejos/Siris Incompletos", "Por favor, preencha todos os campos específicos para Caranguejos e Siris (Cordas, Exemplares, Peso individual e Preço por corda).", "num-cordas-input");
         return;
       }
 
@@ -291,7 +363,7 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
       origPrice = parseFloat(newItem.price) || 0; // price per bag for ostra
 
       if (sacosVal <= 0 || pesoSacoVal <= 0 || origPrice <= 0) {
-        alert("Por favor, preencha todos os campos específicos para Ostras (Sacos, Peso do saco e Preço por saco).");
+        showValidation("Dados de Ostras Incompletos", "Por favor, preencha todos os campos específicos para Ostras (Sacos, Peso do saco e Preço por saco).", "num-sacos-input");
         return;
       }
 
@@ -312,7 +384,7 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
       origPrice = parseFloat(newItem.price) || 0; // price per kg polpa
 
       if (sacosVal <= 0 || pesoSacoVal <= 0 || rendimentoVal <= 0 || origPrice <= 0) {
-        alert("Por favor, preencha todos os campos específicos para Mariscos (Sacos, Peso do saco, Rendimento e Preço por kg polpa).");
+        showValidation("Dados de Mariscos Incompletos", "Por favor, preencha todos os campos específicos para Mariscos (Sacos, Peso do saco, Rendimento e Preço por kg polpa).", "num-sacos-input");
         return;
       }
 
@@ -332,11 +404,11 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
       calculatedWeight = parsePortugueseNumber(newItem.weight);
       calculatedPrice = parsePortugueseNumber(newItem.price) || 0;
       if (!calculatedWeight || calculatedWeight <= 0) {
-        alert("Por favor, preencha o peso da espécie com um valor numérico positivo (maior que zero).");
+        showValidation("Peso Inválido", "Por favor, preencha o peso da espécie com um valor numérico positivo (maior que zero).", "weight-input");
         return;
       }
       if (calculatedPrice < 0) {
-        alert("O preço de venda não pode ser negativo.");
+        showValidation("Preço Inválido", "O preço de venda não pode ser negativo.", "price-input");
         return;
       }
     }
@@ -374,81 +446,76 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
     try {
       // 1. Número da ficha (obrigatório)
       if (!idNumber || !idNumber.trim()) {
-        alert("Por favor, preencha o número da ficha.");
-        const input = document.getElementById('id-number-input');
-        if (input) {
-          input.focus();
-          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        showValidation("Número da Ficha Obrigatório", "Por favor, preencha o número da ficha para continuar.", "id-number-input");
         return;
       }
 
       // 2. Coletor / Nome do Coletor (obrigatório)
       if (!ident.collectorName || !ident.collectorName.trim()) {
-        alert("Por favor, preencha o nome do coletor.");
+        showValidation("Nome do Coletor Obrigatório", "Por favor, preencha o nome do coletor.", "collector-name-input");
         return;
       }
 
       // 3. Porto / Localidade (obrigatório)
       if (!ident.location || !ident.location.trim()) {
-        alert("Por favor, preencha a localidade/porto de desembarque.");
+        showValidation("Localidade Obrigatória", "Por favor, selecione ou preencha a localidade/porto de desembarque.", "location-input");
         return;
       }
 
       // 4. Nome do Pescador (obrigatório)
       if (!ident.fishermanName || !ident.fishermanName.trim()) {
-        alert("Por favor, preencha o nome do pescador.");
+        showValidation("Nome do Pescador Obrigatório", "Por favor, preencha o nome do pescador.", "proprietario-input");
         return;
       }
 
       // 5. Datas de Viagem (obrigatório)
       if (!fish.departureDate) {
-        alert("Por favor, preencha a data de saída (partida).");
+        showValidation("Data de Saída Obrigatória", "Por favor, preencha a data de saída (partida).", "departure-date-input");
         return;
       }
       if (!fish.arrivalDate) {
-        alert("Por favor, preencha a data de desembarque (chegada).");
+        showValidation("Data de Desembarque Obrigatória", "Por favor, preencha a data de desembarque (chegada).", "arrival-date-input");
         return;
       }
 
       const now = new Date();
       const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       if (fish.departureDate > todayStr) {
-        alert("A data de saída não pode ser futura.");
+        showValidation("Data Futura Inválida", "A data de saída não pode ser futura.", "departure-date-input");
         return;
       }
       if (fish.arrivalDate > todayStr) {
-        alert("A data de desembarque não pode ser futura.");
+        showValidation("Data Futura Inválida", "A data de desembarque não pode ser futura.", "arrival-date-input");
         return;
       }
       if (fish.arrivalDate < fish.departureDate) {
-        alert("A data de desembarque não pode ser anterior à data de saída.");
+        showValidation("Conflito de Datas", "A data de desembarque não pode ser anterior à data de saída.", "arrival-date-input");
         return;
       }
 
       // 6. Dias de pesca
       if (fish.fishingDays < 0) {
-        alert("A quantidade de dias de pesca não pode ser negativa.");
+        showValidation("Dias de Pesca Inválidos", "A quantidade de dias de pesca não pode ser negativa.");
         return;
       }
 
       // 7. Produção / Espécies registradas
       if (production.length === 0) {
-        alert("Por favor, adicione pelo menos uma espécie no registro de produção antes de finalizar a ficha.");
+        showValidation("Produção Obrigatória", "Por favor, adicione pelo menos uma espécie no registro de produção antes de finalizar a ficha.", "popular-name-input");
         return;
       }
 
       for (const p of production) {
         if (!p.species || !p.species.trim()) {
-          alert("Uma das espécies adicionadas na produção está com o nome vazio.");
+          showValidation("Espécie Sem Nome", "Uma das espécies adicionadas na produção está com o nome vazio.", "popular-name-input");
           return;
         }
         if (p.weight <= 0) {
-          alert(`O peso/quantidade para a espécie "${p.species}" deve ser positivo (maior que zero).`);
+          showValidation("Peso Inválido", `O peso/quantidade para a espécie "${p.species}" deve ser positivo (maior que zero).`);
           return;
         }
         if (p.price < 0) {
-          alert(`O preço para a espécie "${p.species}" não pode ser negativo.`);
+          showValidation("Preço Inválido", `O preço para a espécie "${p.species}" não pode ser negativo.`);
           return;
         }
       }
@@ -656,6 +723,7 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
           <div className="space-y-2">
             <label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">Local de Coleta (Localidade)</label>
             <select 
+              id="location-input"
               className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm"
               value={ident.location}
               onChange={e => {
@@ -673,12 +741,76 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
           <div className="space-y-2">
             <label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">Nome do Coletor</label>
             <input 
+              id="collector-name-input"
               type="text" 
+              autoComplete="off"
               className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm"
               value={ident.collectorName}
               onChange={e => setIdent({...ident, collectorName: e.target.value})}
               placeholder="--"
             />
+          </div>
+
+          <div className="space-y-2 relative" id="proprietario-autocomplete-container">
+            <label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">Proprietário (Pescador)</label>
+            <div className="relative">
+              <input 
+                id="proprietario-input"
+                type="text" 
+                autoComplete="off"
+                spellCheck={false}
+                className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm"
+                value={ident.fishermanName || ''}
+                onChange={e => {
+                  setIdent({...ident, fishermanName: e.target.value});
+                  if (selectedFishermanId) setSelectedFishermanId('');
+                }}
+                onFocus={() => setShowFishermanSuggestions(true)}
+                onBlur={() => {
+                  setTimeout(() => setShowFishermanSuggestions(false), 200);
+                }}
+                placeholder="--"
+              />
+            </div>
+            {showFishermanSuggestions && fishermanSuggestions.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg max-h-56 overflow-y-auto z-50 animate-in fade-in duration-100">
+                {fishermanSuggestions.map(f => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setIdent(prev => ({
+                        ...prev,
+                        fishermanName: f.name,
+                        location: f.location || prev.location
+                      }));
+                      handleSelectFisherman(f.id);
+                      setShowFishermanSuggestions(false);
+                    }}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      setIdent(prev => ({
+                        ...prev,
+                        fishermanName: f.name,
+                        location: f.location || prev.location
+                      }));
+                      handleSelectFisherman(f.id);
+                      setShowFishermanSuggestions(false);
+                    }}
+                    className="w-full px-4 py-2.5 text-left text-xs sm:text-sm hover:bg-blue-50 dark:hover:bg-slate-700/50 hover:text-blue-700 dark:hover:text-blue-300 flex items-center justify-between border-b border-slate-50 dark:border-slate-700 last:border-0 transition-colors cursor-pointer"
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-bold text-slate-800 dark:text-slate-100">{f.name}</span>
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Localidade: {f.location}</span>
+                    </div>
+                    <span className="text-[10px] bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 font-bold px-2 py-0.5 rounded-md uppercase">
+                      {f.gearType}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -714,56 +846,9 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
               ))}
             </select>
           </div>
-
-          <div className="space-y-2 relative" id="proprietario-autocomplete-container">
-            <label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">Proprietário (Pescador)</label>
-            <div className="relative">
-              <input 
-                type="text" 
-                className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm"
-                value={ident.fishermanName || ''}
-                onChange={e => {
-                  setIdent({...ident, fishermanName: e.target.value});
-                  if (selectedFishermanId) setSelectedFishermanId('');
-                }}
-                onFocus={() => setShowFishermanSuggestions(true)}
-                onBlur={() => {
-                  setTimeout(() => setShowFishermanSuggestions(false), 200);
-                }}
-                placeholder="--"
-              />
-            </div>
-            {showFishermanSuggestions && fishermanSuggestions.length > 0 && (
-              <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg max-h-56 overflow-y-auto z-50 animate-in fade-in duration-100">
-                {fishermanSuggestions.map(f => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() => {
-                      setIdent(prev => ({
-                        ...prev,
-                        fishermanName: f.name,
-                        location: f.location || prev.location
-                      }));
-                      handleSelectFisherman(f.id);
-                      setShowFishermanSuggestions(false);
-                    }}
-                    className="w-full px-4 py-2.5 text-left text-xs sm:text-sm hover:bg-blue-50 dark:hover:bg-slate-700/50 hover:text-blue-700 dark:hover:text-blue-300 flex items-center justify-between border-b border-slate-50 dark:border-slate-700 last:border-0 transition-colors"
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-bold text-slate-800 dark:text-slate-100">{f.name}</span>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Localidade: {f.location}</span>
-                    </div>
-                    <span className="text-[10px] bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 font-bold px-2 py-0.5 rounded-md uppercase">
-                      {f.gearType}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       </div>
+
 
       {/* SECTION 2: INFORMAÇÕES DE PESCARIA (VIAGEM & EMBARCAÇÃO) */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
@@ -854,6 +939,7 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
             <div className="space-y-2">
               <label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">Data de Saída</label>
               <input 
+                id="departure-date-input"
                 type="date" 
                 className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm"
                 value={fish.departureDate}
@@ -864,6 +950,7 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
             <div className="space-y-2">
               <label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">Data de Chegada</label>
               <input 
+                id="arrival-date-input"
                 type="date" 
                 className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm"
                 value={fish.arrivalDate}
@@ -1113,6 +1200,9 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
                 <input 
                   id="popular-name-input"
                   type="text" 
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
                   placeholder="--" 
                   className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm"
                   value={newItem.species}
@@ -1137,7 +1227,14 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
                         key={s.id}
                         type="button"
                         className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors flex flex-col cursor-pointer"
-                        onMouseDown={() => {
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setNewItem(prev => ({...prev, species: s.commonName}));
+                          setScientificName(s.scientificName);
+                          setShowSuggestions(false);
+                        }}
+                        onTouchStart={(e) => {
+                          e.preventDefault();
                           setNewItem(prev => ({...prev, species: s.commonName}));
                           setScientificName(s.scientificName);
                           setShowSuggestions(false);
@@ -1523,6 +1620,90 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
           <Save size={16} /> {isSaving ? 'Salvando...' : 'Finalizar e Salvar Ficha'}
         </button>
       </div>
+
+      {/* MODAL DE VALIDAÇÃO (NÃO BLOQUEIA NATIVAMENTE ELECTRON OU ANDROID) */}
+      {validationModal && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => {
+            const fId = validationModal.fieldId;
+            setValidationModal(null);
+            if (fId) {
+              setTimeout(() => {
+                const el = document.getElementById(fId);
+                if (el) {
+                  el.focus();
+                  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+              }, 50);
+            }
+          }}
+        >
+          <div 
+            className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-2xl shrink-0">
+                <AlertTriangle size={24} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 leading-snug">
+                  {validationModal.title}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Preencha os campos obrigatórios para continuar
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const fId = validationModal.fieldId;
+                  setValidationModal(null);
+                  if (fId) {
+                    setTimeout(() => {
+                      const el = document.getElementById(fId);
+                      if (el) {
+                        el.focus();
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }
+                    }, 50);
+                  }
+                }}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed bg-amber-50/60 dark:bg-amber-950/20 p-3.5 rounded-2xl border border-amber-200/50 dark:border-amber-900/30">
+              {validationModal.message}
+            </p>
+
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  const fId = validationModal.fieldId;
+                  setValidationModal(null);
+                  if (fId) {
+                    setTimeout(() => {
+                      const el = document.getElementById(fId);
+                      if (el) {
+                        el.focus();
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }
+                    }, 50);
+                  }
+                }}
+                className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-blue-500/20 cursor-pointer"
+              >
+                Entendi, continuar preenchendo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

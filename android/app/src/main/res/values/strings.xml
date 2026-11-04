@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Infopesca</string>
+    <string name="title_activity_main">Infopesca</string>
+    <string name="package_name">com.infopesca.app</string>
+    <string name="custom_url_scheme">com.infopesca.app</string>
+</resources>

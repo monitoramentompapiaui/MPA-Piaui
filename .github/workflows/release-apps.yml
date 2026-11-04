@@ -1,0 +1,155 @@
+name: Publicar aplicativos
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'App.tsx'
+      - 'index.tsx'
+      - 'index.html'
+      - 'index.css'
+      - 'types.ts'
+      - 'components/**'
+      - 'utils/**'
+      - 'public/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - 'capacitor.config.ts'
+      - 'electron/**'
+      - 'android/**'
+      - '.github/workflows/release-apps.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-apps-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-windows:
+    name: Gerar instalador Windows
+    runs-on: windows-latest
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar dependências web
+        run: npm ci
+
+      - name: Compilar aplicação web
+        run: npm run build
+
+      - name: Instalar dependências do Electron
+        working-directory: electron
+        run: npm install --no-audit --no-fund
+
+      - name: Gerar instalador .exe
+        working-directory: electron
+        run: npm run dist
+
+      - name: Enviar instalador como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: electron/release/*.exe
+          if-no-files-found: error
+
+  build-android:
+    name: Gerar APK Android
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar plataforma Android 36
+        run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Instalar dependências web
+        run: npm ci
+
+      - name: Compilar aplicação web
+        run: npm run build
+
+      - name: Sincronizar Capacitor
+        run: npx cap sync android
+
+      - name: Gerar APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Enviar APK como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+  publish:
+    name: Publicar versão mais recente
+    needs:
+      - build-windows
+      - build-android
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar artefatos
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Preparar arquivos com nomes estáveis
+        run: |
+          mkdir -p release
+          WINDOWS_EXE=$(find artifacts/windows-installer -type f -name '*.exe' ! -name '*uninstaller*' | head -n 1)
+          if [ -z "$WINDOWS_EXE" ]; then
+            echo "Instalador Windows não encontrado."
+            exit 1
+          fi
+          cp "$WINDOWS_EXE" release/Infopesca-Setup.exe
+
+          ANDROID_APK=$(find artifacts/android-apk -type f -name '*.apk' | head -n 1)
+          if [ -z "$ANDROID_APK" ]; then
+            echo "APK Android não encontrado."
+            exit 1
+          fi
+          cp "$ANDROID_APK" release/Infopesca.apk
+
+          ls -lh release
+
+      - name: Criar publicação no GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Infopesca v1.0.${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          make_latest: true
+          files: release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

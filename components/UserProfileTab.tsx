@@ -11,9 +11,15 @@ import {
   Sun,
   Moon,
   Mail,
-  FileText
+  FileText,
+  Download,
+  Monitor,
+  Smartphone,
+  RefreshCw,
+  ExternalLink
 } from 'lucide-react';
 import { getUserProfile, updateUserProfile, supabase, isSupabaseConfigured } from '../utils/supabase';
+import { fetchLatestAppRelease, FALLBACK_APP_RELEASE, LatestAppRelease } from '../utils/appReleases';
 
 interface UserProfileTabProps {
   user: any;
@@ -25,6 +31,29 @@ interface UserProfileTabProps {
   currentTheme?: 'light' | 'dark';
   onToggleTheme?: (theme: 'light' | 'dark') => void;
 }
+
+const formatReleaseDate = (value: string | null): string => {
+  if (!value) return '';
+  try {
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(value));
+  } catch {
+    return '';
+  }
+};
+
+const formatFileSize = (bytes?: number): string => {
+  if (!bytes || bytes <= 0) return '';
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(0)} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
 
 const UserProfileTab: React.FC<UserProfileTabProps> = ({ 
   user, 
@@ -50,6 +79,10 @@ const UserProfileTab: React.FC<UserProfileTabProps> = ({
   const [isChangingPassword, setIsChangingPassword] = useState<boolean>(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+
+  // Central de downloads dos aplicativos
+  const [appRelease, setAppRelease] = useState<LatestAppRelease>(FALLBACK_APP_RELEASE);
+  const [isLoadingRelease, setIsLoadingRelease] = useState<boolean>(false);
 
   // Load Profile on mount
   useEffect(() => {
@@ -87,6 +120,20 @@ const UserProfileTab: React.FC<UserProfileTabProps> = ({
 
     fetchProfile();
   }, [user]);
+
+  const loadAppRelease = async () => {
+    setIsLoadingRelease(true);
+    try {
+      const release = await fetchLatestAppRelease();
+      setAppRelease(release);
+    } finally {
+      setIsLoadingRelease(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadAppRelease();
+  }, []);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -504,6 +551,107 @@ const UserProfileTab: React.FC<UserProfileTabProps> = ({
           </button>
 
         </div>
+      </div>
+
+      {/* CENTRAL DE DOWNLOADS DOS APLICATIVOS */}
+      <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-xl p-6 sm:p-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight flex items-center gap-2.5">
+              <Download size={20} className="text-blue-600 dark:text-blue-400" />
+              Central de Downloads
+            </h2>
+            <p className="text-xs text-slate-400 dark:text-slate-550 mt-1 font-semibold">
+              Baixe a versão mais atualizada do Infopesca para o seu dispositivo.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => void loadAppRelease()}
+            disabled={isLoadingRelease}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all disabled:opacity-50 cursor-pointer w-fit"
+            title="Verificar a versão mais recente publicada"
+          >
+            <RefreshCw size={14} className={isLoadingRelease ? 'animate-spin' : ''} />
+            {isLoadingRelease ? 'Verificando...' : 'Verificar atualização'}
+          </button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+            Versão: {isLoadingRelease ? 'consultando...' : appRelease.version}
+          </span>
+
+          {appRelease.publishedAt && (
+            <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-500 dark:text-slate-400">
+              Publicada em {formatReleaseDate(appRelease.publishedAt)}
+            </span>
+          )}
+
+          <a
+            href={appRelease.releasePageUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          >
+            <ExternalLink size={11} />
+            Ver todas as versões
+          </a>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <a
+            href={appRelease.windows.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 hover:border-blue-300 dark:hover:border-blue-800 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-all"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-200/60 dark:border-blue-900/50">
+                <Monitor size={22} />
+              </div>
+              <div>
+                <p className="text-sm font-black text-slate-800 dark:text-slate-100">Windows</p>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
+                  Instalador .exe {appRelease.windows.size ? `• ${formatFileSize(appRelease.windows.size)}` : ''}
+                </p>
+              </div>
+            </div>
+            <span className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-wider shadow-md group-hover:bg-blue-700 transition-all shrink-0">
+              <Download size={14} />
+              Baixar .exe
+            </span>
+          </a>
+
+          <a
+            href={appRelease.android.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 hover:border-emerald-300 dark:hover:border-emerald-800 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20 transition-all"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-200/60 dark:border-emerald-900/50">
+                <Smartphone size={22} />
+              </div>
+              <div>
+                <p className="text-sm font-black text-slate-800 dark:text-slate-100">Android</p>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
+                  Aplicativo .apk {appRelease.android.size ? `• ${formatFileSize(appRelease.android.size)}` : ''}
+                </p>
+              </div>
+            </div>
+            <span className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider shadow-md group-hover:bg-emerald-700 transition-all shrink-0">
+              <Download size={14} />
+              Baixar .apk
+            </span>
+          </a>
+        </div>
+
+        <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 leading-relaxed">
+          Os links apontam sempre para a última versão publicada. A versão web é atualizada automaticamente; os aplicativos desktop e Android são gerados a cada nova publicação no repositório do projeto.
+        </p>
       </div>
 
     </div>

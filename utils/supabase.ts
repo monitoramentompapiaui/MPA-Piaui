@@ -49,9 +49,19 @@ export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseKey) 
   : null;
 
+/**
+ * Enriquece a identificação do formulário com um marcador de atualização.
+ * Esse marcador (armazenado no JSONB `identification`) permite que a
+ * sincronização detecte edições feitas em outros dispositivos.
+ */
+const withSyncMarker = (identification: any): any => ({
+  ...identification,
+  _updatedAt: new Date().toISOString(),
+});
+
 // --- API Helpers for Forms (Fichas) ---
 
-import { dbGet, dbSet, dbRemove, dbGetAllForms, dbSaveFormsBulk, dbClearAllForms } from './db';
+import { dbGet, dbSet, dbRemove, dbGetAllForms, dbSaveFormsBulk, dbClearAllForms, dbDeleteFormsBulk } from './db';
 
 const mapRowToForm = (row: any): LandingForm => ({
   id: row.id,
@@ -94,114 +104,111 @@ export const getSupabaseForms = async (
     const serverTotal = count || 0;
 
     // A. SE O SINCRONISMO INICIAL JÁ ESTAVA COMPLETO:
-    // Fazemos um carregamento incremental ultrarrápido por data de criação!
+    // Reconciliação incremental: novos registros, edições (via marcador _updatedAt
+    // dentro do JSONB `identification`) e exclusões feitas no servidor.
     if (syncCompleted && cachedForms.length > 0) {
       try {
-        console.log(`[Sync] Sincronização incremental ativa. Registros locais: ${cachedForms.length}. Servidor: ${serverTotal}.`);
-        
-        // Encontra a data do registro mais recente no cache local de forma totalmente segura
-        let lastCreatedAt = '1970-01-01T00:00:00.000Z';
-        try {
-          const validDates = cachedForms
-            .map(f => {
-              if (!f.createdAt) return null;
-              const t = Date.parse(f.createdAt);
-              return isNaN(t) ? null : new Date(t).toISOString();
-            })
-            .filter((d): d is string => d !== null);
+        console.log(`[Sync] Sincronização incremental/reconciliação ativa. Registros locais: ${cachedForms.length}. Servidor: ${serverTotal}.`);
 
-          if (validDates.length > 0) {
-            const maxDateStr = validDates.reduce((max, d) => d > max ? d : max, '1970-01-01T00:00:00.000Z');
-            const maxDate = new Date(maxDateStr);
-            // Subtract 10 minutes to safely handle clock skew or transaction commit delays
-            lastCreatedAt = new Date(maxDate.getTime() - 10 * 60 * 1000).toISOString();
+        // 1. Busca apenas os marcadores (id + _updatedAt) de todos os registros do servidor.
+        //    É uma operação leve: uma coluna curta por linha.
+        const serverMarkers = new Map<string, string | null>();
+        const MARKER_PAGE = 1000;
+        for (let page = 0; ; page++) {
+          const { data: markerRows, error: markerError } = await supabase
+            .from('landing_forms')
+            .select('id, upd:identification->>_updatedAt')
+            .order('id', { ascending: true })
+            .range(page * MARKER_PAGE, page * MARKER_PAGE + MARKER_PAGE - 1);
+
+          if (markerError) {
+            console.warn('[Sync] Não foi possível ler o marcador de atualização do servidor. Recorrendo à reconstrução completa:', markerError);
+            throw markerError;
           }
-        } catch (e) {
-          console.warn('[Sync] Erro ao calcular lastCreatedAt do cache local:', e);
-        }
-        
-        console.log(`[Sync] Buscando fichas adicionadas após: ${lastCreatedAt}`);
-        
-        let newRows: any[] = [];
-        let hasMoreNew = true;
-        let lastNewId: string | null = null;
-        const CHUNK_SIZE = 1000;
 
-        while (hasMoreNew) {
-          let q = supabase
+          if (!markerRows || markerRows.length === 0) break;
+          for (const row of markerRows as any[]) {
+            serverMarkers.set(String(row.id), row.upd ?? null);
+          }
+          if (markerRows.length < MARKER_PAGE) break;
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+
+        // 2. Registros que existem no servidor mas não estão no cache local (novos),
+        //    ou cujo marcador mudou (editados em outro dispositivo).
+        const cachedById = new Map<string, LandingForm>();
+        for (const local of cachedForms) cachedById.set(local.id, local);
+
+        const needingFullFetch: string[] = [];
+        serverMarkers.forEach((serverUpd, id) => {
+          const local = cachedById.get(id);
+          if (!local) {
+            needingFullFetch.push(id);
+            return;
+          }
+          if (local.isOfflinePending) {
+            // Nunca sobrescrever fichas offline pendentes de envio.
+            return;
+          }
+          const localUpd = local.identification?._updatedAt ?? null;
+          if (serverUpd !== localUpd) {
+            needingFullFetch.push(id);
+          }
+        });
+
+        // 3. Registros locais que não existem mais no servidor (excluídos).
+        //    Fichas offline pendentes NUNCA são descartadas.
+        const staleLocalIds: string[] = [];
+        for (const local of cachedForms) {
+          if (local.isOfflinePending) continue;
+          if (!serverMarkers.has(local.id)) {
+            staleLocalIds.push(local.id);
+          }
+        }
+
+        // 4. Baixa o conteúdo completo apenas dos registros que mudaram (inclusão/edição).
+        const CHUNK = 200;
+        const fetchedForms: LandingForm[] = [];
+        for (let i = 0; i < needingFullFetch.length; i += CHUNK) {
+          const ids = needingFullFetch.slice(i, i + CHUNK);
+          const { data, error } = await supabase
             .from('landing_forms')
             .select('*')
-            .order('created_at', { ascending: true })
-            .order('id', { ascending: true })
-            .limit(CHUNK_SIZE);
+            .in('id', ids);
 
-          if (lastNewId) {
-            q = q.or(`created_at.gt."${lastCreatedAt}",and(created_at.eq."${lastCreatedAt}",id.gt.${lastNewId})`);
-          } else {
-            q = q.gt('created_at', lastCreatedAt);
-          }
-
-          const { data, error } = await q;
           if (error) {
-            console.error('[Sync] Erro na paginação incremental de novas fichas:', error);
+            console.error('[Sync] Erro ao baixar registros novos/editados:', error);
             throw error;
           }
 
-          if (data && data.length > 0) {
-            newRows = [...newRows, ...data];
-            const lastItem = data[data.length - 1];
-            const rawDate = lastItem.created_at;
-            const parsed = Date.parse(rawDate);
-            lastCreatedAt = !isNaN(parsed) ? new Date(parsed).toISOString() : rawDate;
-            lastNewId = lastItem.id;
-            
-            if (data.length < CHUNK_SIZE) {
-              hasMoreNew = false;
-            }
-          } else {
-            hasMoreNew = false;
+          if (data) {
+            fetchedForms.push(...data.map(mapRowToForm));
           }
+          await new Promise(resolve => setTimeout(resolve, 15));
         }
 
-        if (newRows.length > 0) {
-          console.log(`[Sync] Sincronismo incremental finalizado! Novas fichas encontradas: ${newRows.length}`);
-          const mappedNew = newRows.map(mapRowToForm);
-          
-          // Salva os novos registros em lote no IndexedDB
-          await dbSaveFormsBulk(mappedNew);
-          
-          // Recupera todos reconciliados
-          cachedForms = await dbGetAllForms();
-          
-          // Ordena por data decrescente ou id para o cache ficar arrumado
-          cachedForms.sort((a, b) => {
-            const dateA = new Date(a.createdAt || 0).getTime();
-            const dateB = new Date(b.createdAt || 0).getTime();
-            return dateB - dateA;
-          });
-
-          if (onChunk) {
-            onChunk(cachedForms, { loaded: cachedForms.length, total: serverTotal, isResuming: false });
-          }
-          return cachedForms;
-        } else {
-          console.log('[Sync] Banco local está perfeitamente em dia!');
-          // Se a quantidade no servidor diminuiu (exclusões), ou houver inconsistência
-          if (cachedForms.length > serverTotal + 500) {
-            console.warn('[Sync] Cache local é maior do que o servidor. Continuando reconstrução limpa...');
-          } else {
-            // Ordena antes de retornar
-            cachedForms.sort((a, b) => {
-              const dateA = new Date(a.createdAt || 0).getTime();
-              const dateB = new Date(b.createdAt || 0).getTime();
-              return dateB - dateA;
-            });
-            if (onChunk) {
-              onChunk(cachedForms, { loaded: cachedForms.length, total: serverTotal, isResuming: false });
-            }
-            return cachedForms;
-          }
+        if (staleLocalIds.length > 0) {
+          console.log(`[Sync] Removendo ${staleLocalIds.length} ficha(s) excluída(s) do cache local (sincronizadas com o servidor).`);
+          await dbDeleteFormsBulk(staleLocalIds);
         }
+
+        if (fetchedForms.length > 0) {
+          console.log(`[Sync] Salvando ${fetchedForms.length} ficha(s) nova(s)/atualizada(s) no cache local.`);
+          await dbSaveFormsBulk(fetchedForms);
+        }
+
+        cachedForms = await dbGetAllForms();
+        cachedForms.sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0).getTime();
+          const dateB = new Date(b.createdAt || 0).getTime();
+          return dateB - dateA;
+        });
+
+        console.log(`[Sync] Reconciliação concluída. Removidas: ${staleLocalIds.length}. Atualizadas: ${fetchedForms.length}. Total local: ${cachedForms.length}.`);
+        if (onChunk) {
+          onChunk(cachedForms, { loaded: cachedForms.length, total: serverTotal, isResuming: false });
+        }
+        return cachedForms;
       } catch (incError) {
         console.warn('[Sync] Erro durante sincronização incremental. Recorrendo a sincronização de reconstrução total por segurança:', incError);
         // Remove completed flag and clear last sync id to force a fresh and clean keyset sync
@@ -212,8 +219,11 @@ export const getSupabaseForms = async (
 
     // B. SE É O PRIMEIRO CARREGAMENTO, OU RETOMANDO UM CARREGAMENTO ANTERIOR INTERROMPIDO, OU CORRIGINDO DESENCONTRO DE DADOS:
     // Usamos Paginação por Keyset para baixar sequencialmente sem expirar a conexão SQL!
+    // Fichas offline pendentes NUNCA são descartadas — elas são reencaixadas no final.
+    const pendingForms = cachedForms.filter(f => f.isOfflinePending);
+
     let lastSyncId = await dbGet<string>('fishery_forms_last_sync_id') || null;
-    
+
     if (!lastSyncId) {
       console.log(`[Sync] Inconsistência de contagem encontrada ou primeiro carregamento. Local: ${cachedForms.length}, Servidor: ${serverTotal}. Limpando banco local para reconstrução autolimpante completa de alta capacidade (Keyset)...`);
       await dbClearAllForms();
@@ -278,7 +288,15 @@ export const getSupabaseForms = async (
 
     // Conclusão com sucesso do carregamento de toda a base de 100% das fichas
     console.log(`[Sync] Baixando todas as fichas gravadas localmente no IndexedDB...`);
-    const finalForms = await dbGetAllForms();
+    let finalForms = await dbGetAllForms();
+
+    // Reencaixa as fichas offline pendentes que possam ter sido apagadas do cache
+    if (pendingForms.length > 0) {
+      console.log(`[Sync] Reanexando ${pendingForms.length} ficha(s) offline pendente(s) de sincronização...`);
+      await dbSaveFormsBulk(pendingForms);
+      finalForms = await dbGetAllForms();
+    }
+
     console.log(`[Sync] Sincronização completa de todas as ${finalForms.length} fichas efetuada!`);
     
     // Organiza por data decrescente (mais recente primeiro)
@@ -308,7 +326,7 @@ export const insertSupabaseForm = async (form: LandingForm): Promise<void> => {
         id: form.id,
         id_number: form.idNumber,
         created_at: form.createdAt || new Date().toISOString(),
-        identification: form.identification,
+        identification: withSyncMarker(form.identification),
         fishing: form.fishing,
         gear: form.gear,
         production: form.production,
@@ -333,7 +351,7 @@ export const insertMultipleSupabaseForms = async (forms: LandingForm[]): Promise
       id: form.id,
       id_number: form.idNumber,
       created_at: form.createdAt || new Date().toISOString(),
-      identification: form.identification,
+      identification: withSyncMarker(form.identification),
       fishing: form.fishing,
       gear: form.gear,
       production: form.production,
@@ -370,7 +388,7 @@ export const updateSupabaseForm = async (form: LandingForm): Promise<void> => {
       .from('landing_forms')
       .update({
         id_number: form.idNumber,
-        identification: form.identification,
+        identification: withSyncMarker(form.identification),
         fishing: form.fishing,
         gear: form.gear,
         production: form.production,

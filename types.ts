@@ -40,6 +40,8 @@ export interface IdentificationData {
   isManualEntry?: boolean; // Diferencial para identificar cadastros manuais individuais
   createdByEmail?: string;
   createdByUsername?: string;
+  /** Marcador interno usado pela sincronização para detectar edições feitas em outros dispositivos. */
+  _updatedAt?: string;
 }
 
 export interface FishingData {

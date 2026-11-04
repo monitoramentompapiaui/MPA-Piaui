@@ -81,13 +81,15 @@ const isFormIncomplete = (form: LandingForm): boolean => {
   if (!form.fishing?.fishingDays || form.fishing.fishingDays <= 0) return true;
 
   // 3. Produção/Espécies
-  if (!form.production || form.production.length === 0) return true;
-  
-  // Se algum item de produção estiver com campos importantes em branco ou inválidos
-  const hasEmptyProduction = form.production.some(item => 
-    !item.species || item.species.trim() === '' || !item.weight || item.weight <= 0
-  );
-  if (hasEmptyProduction) return true;
+  // Lista vazia é válida: representa uma viagem em que o pescador não capturou nada.
+  // O esforço de pesca dessa ficha continua sendo contabilizado nas análises mensais.
+  if (form.production && form.production.length > 0) {
+    // Se algum item de produção estiver com campos importantes em branco ou inválidos
+    const hasEmptyProduction = form.production.some(item =>
+      !item.species || item.species.trim() === '' || !item.weight || item.weight <= 0
+    );
+    if (hasEmptyProduction) return true;
+  }
 
   return false;
 };
@@ -255,14 +257,14 @@ const FormItem = memo(({
               </div>
             </div>
             <div className={`md:col-span-2 p-4 rounded-2xl border overflow-x-auto transition-all ${
-              incomplete && (!form.production || form.production.length === 0 || form.production.some(it => !it.species || !it.weight || it.weight <= 0))
+              incomplete && form.production && form.production.length > 0 && form.production.some(it => !it.species || !it.weight || it.weight <= 0)
                 ? 'bg-red-50/15 dark:bg-red-950/10 border-red-200 dark:border-red-900/30' 
                 : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800'
             }`}>
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase">Tabela de Produção e Capturas</h4>
                 {(!form.production || form.production.length === 0) && (
-                  <span className="text-[9px] font-black text-red-700 bg-red-100 border border-red-300 px-2 py-0.5 rounded-full uppercase">Falta Produção</span>
+                  <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-full uppercase">Sem captura (produção 0)</span>
                 )}
               </div>
               <table className="w-full text-xs min-w-[450px] md:min-w-full">
@@ -277,9 +279,9 @@ const FormItem = memo(({
                 <tbody>
                   {!form.production || form.production.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-6 text-center text-red-650 bg-red-100/40 dark:bg-red-950/20 rounded-xl border border-dashed border-red-300 font-bold p-3">
-                        ⚠️ NENHUMA ESPÉCIE DE PRODUÇÃO REGISTRADA NESTA FICHA! <br/>
-                        <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-1 block">Fichas válidas precisam ter pelo menos 1 registro de espécie com peso preenchido.</span>
+                      <td colSpan={4} className="py-6 text-center text-slate-600 dark:text-slate-300 bg-slate-100/60 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 font-bold p-3">
+                        Nenhuma espécie registrada nesta ficha. <br/>
+                        <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-1 block">Viagem sem captura (produção 0) — válida para o cálculo do esforço de pesca.</span>
                       </td>
                     </tr>
                   ) : (
@@ -1427,8 +1429,8 @@ const MyFormsList: React.FC<Props> = ({
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {!viewingForm.production || viewingForm.production.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="py-4 text-center text-red-500 font-bold">
-                            Nenhuma espécie de produção registrada nesta ficha!
+                          <td colSpan={5} className="py-4 text-center text-slate-500 dark:text-slate-400 font-bold">
+                            Viagem sem captura (produção 0) — nenhuma espécie registrada.
                           </td>
                         </tr>
                       ) : (

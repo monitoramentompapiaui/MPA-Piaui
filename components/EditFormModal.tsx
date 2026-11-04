@@ -616,13 +616,11 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
             </h3>
             
             {/* Lista de Produção Atual */}
-            <div className={`space-y-3 p-6 rounded-2xl border transition-all ${
-              editingForm.production.length === 0 ? 'bg-red-50/10 border-red-300' : 'bg-slate-50 border-slate-200'
-            }`}>
+            <div className="space-y-3 p-6 rounded-2xl border transition-all bg-slate-50 border-slate-200">
               {editingForm.production.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-6 text-center space-y-2">
-                  <p className="text-sm font-bold text-red-600 flex items-center gap-1.5">⚠️ Ficha Incompleta: Lista de Produção Vazia</p>
-                  <p className="text-xs text-slate-500 max-w-md">Para salvar esta ficha como completa, registre ao menos uma espécie capturada com seu respectivo peso.</p>
+                  <p className="text-sm font-bold text-slate-600 flex items-center gap-1.5">Sem captura registrada (produção 0)</p>
+                  <p className="text-xs text-slate-500 max-w-md">Esta ficha representa uma viagem em que o pescador não capturou nada. Salve normalmente: o esforço de pesca será contabilizado nas análises mensais.</p>
                 </div>
               ) : (
                 <div className="space-y-2">

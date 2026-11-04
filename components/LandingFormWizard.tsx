@@ -500,11 +500,8 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
       }
 
       // 7. Produção / Espécies registradas
-      if (production.length === 0) {
-        showValidation("Produção Obrigatória", "Por favor, adicione pelo menos uma espécie no registro de produção antes de finalizar a ficha.", "popular-name-input");
-        return;
-      }
-
+      // Fichas sem produção são válidas: representam viagens em que o pescador não capturou nada.
+      // O esforço de pesca (dias, local, arte) deve ser contabilizado normalmente nas análises mensais.
       for (const p of production) {
         if (!p.species || !p.species.trim()) {
           showValidation("Espécie Sem Nome", "Uma das espécies adicionadas na produção está com o nome vazio.", "popular-name-input");
@@ -1186,7 +1183,7 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
           </div>
           <div>
             <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider">Produção</h3>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">Inserção de espécies pescadas, pesos e valores de venda</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">Inserção de espécies pescadas, pesos e valores de venda. Em viagens sem captura, deixe a lista vazia.</p>
           </div>
         </div>
 
@@ -1521,7 +1518,7 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
                 {production.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center text-slate-400 dark:text-slate-500 italic text-xs sm:text-sm font-medium">
-                      Nenhuma espécie adicionada à produção desta ficha ainda. Utilize o formulário acima para registrar.
+                      Nenhuma espécie registrada. Esta ficha será salva como viagem sem captura (produção 0), contabilizando o esforço de pesca.
                     </td>
                   </tr>
                 ) : (
@@ -1610,9 +1607,9 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
         <button 
           type="button"
           onClick={handleSave}
-          disabled={isSaving || production.length === 0 || !idNumber || !idNumber.trim()}
+          disabled={isSaving || !idNumber || !idNumber.trim()}
           className={`flex items-center gap-2 px-10 py-4 rounded-xl text-white font-extrabold transition-all shadow-md text-xs uppercase tracking-wider cursor-pointer ${
-            isSaving || production.length === 0 || !idNumber || !idNumber.trim()
+            isSaving || !idNumber || !idNumber.trim()
               ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 cursor-not-allowed'
               : 'bg-green-600 hover:bg-green-700 shadow-green-200 dark:shadow-none'
           }`}

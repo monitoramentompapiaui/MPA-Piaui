@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { LandingForm, ProductionItem, Species } from '../types';
+import React, { useMemo, useState } from 'react';
+import { LandingForm, ProductionItem, Species, Fisherman } from '../types';
 import { parseToISODate } from '../utils/dateUtils';
 import { parsePortugueseNumber } from '../utils/numberUtils';
 import { standardizeText, standardizeScientificName } from '../utils/textUtils';
@@ -20,7 +20,25 @@ interface EditFormModalProps {
   editingForm: LandingForm;
   onClose: () => void;
   onSave: (updatedForm: LandingForm) => void;
+  fishermen?: Fisherman[];
+  speciesList?: Species[];
 }
+
+const normalizeSearch = (value: string): string =>
+  value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+const LOCATION_OPTIONS = [
+  'Arrombado',
+  'Barra Grande',
+  'Cajueiro da Praia',
+  'Canárias',
+  'Coqueiro',
+  'Luís Correia',
+  'Igaraçu',
+  'Ilha Grande',
+  'Macapá',
+  'Pedra do Sal'
+];
 
 const months = [
   'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
@@ -30,10 +48,118 @@ const months = [
 export const EditFormModal: React.FC<EditFormModalProps> = ({ 
   editingForm: initialForm, 
   onClose, 
-  onSave 
+  onSave,
+  fishermen = [],
+  speciesList = []
 }) => {
   const [editingForm, setEditingForm] = useState<LandingForm>({ ...initialForm });
-  const [newEditSpecies, setNewEditSpecies] = useState({ species: '', weight: '', price: '' });
+  const [newEditSpecies, setNewEditSpecies] = useState({ species: '', scientificName: '', weight: '', price: '' });
+  const [showFishermanSuggestions, setShowFishermanSuggestions] = useState(false);
+  const [showNewSpeciesSuggestions, setShowNewSpeciesSuggestions] = useState(false);
+  const [editingSpeciesIndex, setEditingSpeciesIndex] = useState<number | null>(null);
+  const [showEditingSpeciesSuggestions, setShowEditingSpeciesSuggestions] = useState(false);
+
+  const locationOptions = useMemo(() => {
+    const savedLocation = editingForm.identification.location?.trim();
+    const locations = Array.from(new Set([
+      ...LOCATION_OPTIONS,
+      ...(savedLocation ? [savedLocation] : [])
+    ]));
+    return locations.sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [editingForm.identification.location]);
+
+  const fishermanSuggestions = useMemo(() => {
+    const query = normalizeSearch(editingForm.identification.fishermanName || '');
+    const location = normalizeSearch(editingForm.identification.location || '');
+    let pool = fishermen;
+
+    if (location) {
+      const inLocation = fishermen.filter(f => normalizeSearch(f.location || '') === location);
+      if (inLocation.length > 0) pool = inLocation;
+    }
+
+    if (!query) {
+      return location ? pool.slice(0, 20) : [];
+    }
+
+    return pool
+      .filter(f => normalizeSearch(f.name || '').includes(query))
+      .sort((a, b) => {
+        const aNorm = normalizeSearch(a.name || '');
+        const bNorm = normalizeSearch(b.name || '');
+        const aStarts = aNorm.startsWith(query);
+        const bStarts = bNorm.startsWith(query);
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+        return a.name.localeCompare(b.name, 'pt-BR');
+      })
+      .slice(0, 20);
+  }, [fishermen, editingForm.identification.fishermanName, editingForm.identification.location]);
+
+  const newSpeciesSuggestions = useMemo(() => {
+    const term = normalizeSearch(newEditSpecies.species);
+    if (!term) return [];
+    return speciesList
+      .filter(s => normalizeSearch(s.commonName || '').includes(term) || normalizeSearch(s.scientificName || '').includes(term))
+      .sort((a, b) => a.commonName.localeCompare(b.commonName, 'pt-BR'))
+      .slice(0, 15);
+  }, [speciesList, newEditSpecies.species]);
+
+  const editingSpeciesSuggestions = useMemo(() => {
+    if (editingSpeciesIndex === null) return [];
+    const term = normalizeSearch(editingForm.production[editingSpeciesIndex]?.species || '');
+    if (!term) return [];
+    return speciesList
+      .filter(s => normalizeSearch(s.commonName || '').includes(term) || normalizeSearch(s.scientificName || '').includes(term))
+      .sort((a, b) => a.commonName.localeCompare(b.commonName, 'pt-BR'))
+      .slice(0, 15);
+  }, [speciesList, editingForm.production, editingSpeciesIndex]);
+
+  const applyFisherman = (fisherman: Fisherman) => {
+    const specific = fisherman.gearType || '';
+    const general = fisherman.gearTypeGeneral || getGeneralGearType(specific);
+
+    setEditingForm(prev => ({
+      ...prev,
+      identification: {
+        ...prev.identification,
+        fishermanName: fisherman.name,
+        location: fisherman.location || prev.identification.location,
+        vesselName: fisherman.vesselName || prev.identification.vesselName
+      },
+      fishing: {
+        ...prev.fishing,
+        gearType: specific,
+        gearTypeGeneral: general,
+        vesselType: fisherman.vesselType || prev.fishing.vesselType,
+        propulsionType: fisherman.propulsionType || prev.fishing.propulsionType
+      },
+      gear: fisherman.gearDetails || {}
+    }));
+    setShowFishermanSuggestions(false);
+  };
+
+  const applySpeciesToProduction = (productionIndex: number, species: Species) => {
+    setEditingForm(prev => ({
+      ...prev,
+      production: prev.production.map((item, index) => index === productionIndex ? {
+        ...item,
+        species: species.commonName,
+        scientificName: species.scientificName || item.scientificName
+      } : item)
+    }));
+    setShowEditingSpeciesSuggestions(false);
+    setEditingSpeciesIndex(null);
+  };
+
+  const applyNewSpecies = (species: Species) => {
+    setNewEditSpecies(prev => ({
+      ...prev,
+      species: species.commonName,
+      scientificName: species.scientificName || ''
+    }));
+    setShowNewSpeciesSuggestions(false);
+  };
 
   const isIdNumEmpty = !editingForm.idNumber || editingForm.idNumber.toString().trim() === '';
   const isCollectorEmpty = !editingForm.identification.collectorName || editingForm.identification.collectorName.trim() === '';
@@ -111,10 +237,17 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
                       : 'bg-slate-50 border-slate-200 focus:ring-blue-500'
                   }`}
                   value={editingForm.identification.location} 
-                  onChange={e => setEditingForm({...editingForm, identification: {...editingForm.identification, location: e.target.value}})} 
+                  onChange={e => setEditingForm(prev => ({
+                    ...prev,
+                    identification: {
+                      ...prev.identification,
+                      location: e.target.value,
+                      fishermanName: ''
+                    }
+                   }))}
                 >
                   <option value="">-- Selecione a Localidade --</option>
-                  {['Arrombado', 'Barra Grande', 'Cajueiro da Praia', 'Canárias', 'Coqueiro', 'Luís Correia', 'Igaraçu', 'Ilha Grande', 'Macapá', 'Pedra do Sal'].map(loc => (
+                  {locationOptions.map(loc => (
                     <option key={loc} value={loc}>{loc}</option>
                   ))}
                 </select>
@@ -169,20 +302,53 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
                 {isMonthEmpty && <span className="text-[9px] font-bold text-red-500 block mt-0.5">⚠️ Escolha o Mês</span>}
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1 relative">
                 <label className={`text-[10px] font-black uppercase tracking-widest ${isFishermanEmpty ? 'text-red-500' : 'text-slate-400'}`}>Proprietário</label>
                 <input 
                   id="edit-field-fisher-name"
                   type="text" 
+                  autoComplete="off"
+                  spellCheck={false}
                   className={`w-full p-3 rounded-xl outline-none focus:ring-2 font-medium text-slate-800 border transition-all ${
                     isFishermanEmpty 
                       ? 'border-red-300 bg-red-50/20 focus:ring-red-500 focus:border-red-400' 
                       : 'bg-slate-50 border-slate-200 focus:ring-blue-500'
                   }`}
                   value={editingForm.identification.fishermanName || ''} 
-                  onChange={e => setEditingForm({...editingForm, identification: {...editingForm.identification, fishermanName: e.target.value}})} 
+                  onChange={e => setEditingForm(prev => ({
+                    ...prev,
+                    identification: {
+                      ...prev.identification,
+                      fishermanName: e.target.value
+                    }
+                   }))}
+                  onFocus={() => setShowFishermanSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowFishermanSuggestions(false), 200)}
                   placeholder="Nome do Pescador / Proprietário"
                 />
+                {showFishermanSuggestions && fishermanSuggestions.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg max-h-56 overflow-y-auto z-50">
+                    {fishermanSuggestions.map(f => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        className="w-full px-4 py-2.5 text-left text-xs sm:text-sm hover:bg-blue-50 dark:hover:bg-slate-700/50 hover:text-blue-700 dark:hover:text-blue-300 flex items-center justify-between border-b border-slate-50 dark:border-slate-700 last:border-0 transition-colors cursor-pointer"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          applyFisherman(f);
+                        }}
+                      >
+                        <span className="flex flex-col">
+                          <span className="font-bold text-slate-800 dark:text-slate-100">{f.name}</span>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Localidade: {f.location}</span>
+                        </span>
+                        <span className="text-[10px] bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 font-bold px-2 py-0.5 rounded-md uppercase">
+                          {f.gearType}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {isFishermanEmpty && <span className="text-[9px] font-bold text-red-500 block mt-0.5">⚠️ Informe o Proprietário</span>}
               </div>
 
@@ -636,12 +802,14 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
                           isRowInvalid ? 'border-red-300 ring-1 ring-red-150 bg-red-50/5' : 'border-slate-200'
                         }`}
                       >
-                        <div className="md:col-span-2">
+                        <div className="md:col-span-2 relative">
                           <label className={`text-[9px] font-black uppercase tracking-widest block mb-0.5 ${isSpeciesEmpty ? 'text-red-500' : 'text-slate-400'}`}>
                             Espécie {isSpeciesEmpty && ' (⚠️ REQUERIDO)'}
                           </label>
                           <input 
                             type="text" 
+                            autoComplete="off"
+                            spellCheck={false}
                             className={`w-full p-2 border rounded-lg text-xs font-bold transition-all ${
                               isSpeciesEmpty 
                                 ? 'border-red-350 bg-red-50/20 text-red-800 focus:ring-red-550' 
@@ -653,9 +821,40 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
                               const updatedProd = editingForm.production.map((item, ipx) => 
                                 (item.id === p.id || (!p.id && idx === ipx)) ? { ...item, species: val } : item
                               );
-                              setEditingForm({ ...editingForm, production: updatedProd });
+                              setEditingForm(prev => ({ ...prev, production: updatedProd }));
+                              setEditingSpeciesIndex(idx);
+                              setShowEditingSpeciesSuggestions(true);
                             }}
+                            onFocus={() => {
+                              setEditingSpeciesIndex(idx);
+                              setShowEditingSpeciesSuggestions(true);
+                            }}
+                            onBlur={() => setTimeout(() => {
+                              setShowEditingSpeciesSuggestions(false);
+                              setEditingSpeciesIndex(null);
+                            }, 200)}
                           />
+                          {showEditingSpeciesSuggestions && editingSpeciesIndex === idx && editingSpeciesSuggestions.length > 0 && (
+                            <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg max-h-48 overflow-y-auto z-50">
+                              {editingSpeciesSuggestions.map(s => (
+                                <button
+                                  key={s.id}
+                                  type="button"
+                                  className="w-full px-4 py-2.5 text-left text-xs hover:bg-blue-50 dark:hover:bg-slate-700/50 hover:text-blue-700 dark:hover:text-blue-300 border-b border-slate-50 dark:border-slate-700 last:border-0 transition-colors cursor-pointer"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    applySpeciesToProduction(idx, s);
+                                  }}
+                                >
+                                  <span className="block font-bold text-slate-800 dark:text-slate-100">{s.commonName}</span>
+                                  <span className="block text-[10px] italic text-slate-400 dark:text-slate-500">{s.scientificName || '---'}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {p.scientificName && (
+                            <p className="mt-1 text-[10px] italic text-slate-400 dark:text-slate-500">{p.scientificName}</p>
+                          )}
                         </div>
                         <div>
                           <label className={`text-[9px] font-black uppercase tracking-widest block mb-0.5 ${isWeightInvalid ? 'text-red-500' : 'text-slate-400'}`}>
@@ -720,16 +919,41 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
               <div className="mt-4 border-t border-slate-200 pt-4">
                 <h4 className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wider">Adicionar Nova Espécie Capturada</h4>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-                  <div className="space-y-1">
+                  <div className="space-y-1 relative">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Espécie</label>
                     <input 
                       id="edit-new-species-name"
                       type="text" 
+                      autoComplete="off"
+                      spellCheck={false}
                       placeholder="--" 
                       className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 text-slate-800"
                       value={newEditSpecies.species}
-                      onChange={e => setNewEditSpecies({...newEditSpecies, species: e.target.value})}
+                      onChange={e => {
+                        setNewEditSpecies(prev => ({ ...prev, species: e.target.value }));
+                        setShowNewSpeciesSuggestions(true);
+                      }}
+                      onFocus={() => setShowNewSpeciesSuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowNewSpeciesSuggestions(false), 200)}
                     />
+                    {showNewSpeciesSuggestions && newSpeciesSuggestions.length > 0 && (
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg max-h-48 overflow-y-auto z-50">
+                        {newSpeciesSuggestions.map(s => (
+                          <button
+                            key={s.id}
+                            type="button"
+                            className="w-full px-4 py-2.5 text-left text-xs hover:bg-blue-50 dark:hover:bg-slate-700/50 hover:text-blue-700 dark:hover:text-blue-300 border-b border-slate-50 dark:border-slate-700 last:border-0 transition-colors cursor-pointer"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              applyNewSpecies(s);
+                            }}
+                          >
+                            <span className="block font-bold text-slate-800 dark:text-slate-100">{s.commonName}</span>
+                            <span className="block text-[10px] italic text-slate-400 dark:text-slate-500">{s.scientificName || '---'}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Peso (Kg)</label>
@@ -764,14 +988,15 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
                           const newItem: ProductionItem = {
                             id: Math.random().toString(36).substr(2, 9),
                             species: standardizeText(newEditSpecies.species),
+                            scientificName: newEditSpecies.scientificName?.trim() ? standardizeScientificName(newEditSpecies.scientificName) : undefined,
                             weight: parsePortugueseNumber(newEditSpecies.weight) || 0,
                             price: parsePortugueseNumber(newEditSpecies.price) || 0
                           };
-                          setEditingForm({
-                            ...editingForm,
-                            production: [...editingForm.production, newItem]
-                          });
-                          setNewEditSpecies({ species: '', weight: '', price: '' });
+                          setEditingForm(prev => ({
+                            ...prev,
+                            production: [...prev.production, newItem]
+                          }));
+                          setNewEditSpecies({ species: '', scientificName: '', weight: '', price: '' });
                         }
                       }}
                       className="w-full flex items-center justify-center gap-1.5 p-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-600 hover:text-white transition-all font-bold text-xs shadow-sm h-10"

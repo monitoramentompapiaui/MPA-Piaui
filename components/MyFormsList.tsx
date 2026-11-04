@@ -1513,6 +1513,8 @@ const MyFormsList: React.FC<Props> = ({
       {editingForm && (
         <EditFormModal
           editingForm={editingForm}
+          fishermen={fishermen}
+          speciesList={speciesList}
           onClose={() => setEditingForm(null)}
           onSave={(cleanForm) => {
             onUpdate(cleanForm);

@@ -301,27 +301,34 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
     }
   }, [fish.departureDate, fish.arrivalDate]);
 
-  // Adjust identification fields (year and period) based on fishing dates
-  // Month is NOT auto-filled — it refers to the registration month, independent of fishing dates
+  // Adjust identification fields (year, month and period) based on fishing dates
+  // The month comes from the same date; arrival has priority when both dates exist.
   useEffect(() => {
     const targetDate = fish.arrivalDate || fish.departureDate;
-    if (targetDate) {
-      const parts = targetDate.split('-');
-      if (parts.length === 3) {
-        const year = parseInt(parts[0]);
-        const monthNum = parseInt(parts[1]); // 1-12
-        
-        // Chuvoso: janeiro, fevereiro, março, abril, maio (months 1 to 5)
-        // Seco: junho, julho, agosto, setembro, outubro, novembro, dezembro (months 6 to 12)
-        const calculatedPeriod = monthNum <= 5 ? 'chuvoso' : 'seco';
-        
-        setIdent(prev => ({
-          ...prev,
-          year: year,
-          period: calculatedPeriod
-        }));
-      }
-    }
+    if (!targetDate) return;
+
+    const parts = targetDate.split('-');
+    if (parts.length !== 3) return;
+
+    const year = parseInt(parts[0], 10);
+    const monthNum = parseInt(parts[1], 10);
+    if (!Number.isInteger(year) || monthNum < 1 || monthNum > 12) return;
+
+    const monthsPt = [
+      'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+      'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+    ];
+
+    // Chuvoso: janeiro, fevereiro, março, abril, maio (months 1 to 5)
+    // Seco: junho, julho, agosto, setembro, outubro, novembro, dezembro (months 6 to 12)
+    const calculatedPeriod = monthNum <= 5 ? 'chuvoso' : 'seco';
+
+    setIdent(prev => ({
+      ...prev,
+      year: year,
+      month: monthsPt[monthNum - 1],
+      period: calculatedPeriod
+    }));
   }, [fish.departureDate, fish.arrivalDate]);
 
   const addProductionItem = () => {

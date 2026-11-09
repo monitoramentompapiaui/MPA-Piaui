@@ -1,6 +1,7 @@
 
 import React, { useMemo, useState, useRef, memo, useEffect } from 'react';
 import { LandingForm, Species } from '../types';
+import { formatNumberPtBR } from '../utils/numberUtils';
 import { exportToPdf } from '../utils/pdfExport';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, 
@@ -943,27 +944,27 @@ const ProfessionalChartCard: React.FC<ChartCardProps> = ({
                 const label = context.dataset.label;
                 const unit = type.startsWith('cpue_') ? 'kg/dia' : 't';
                 if (label === 'Outliers') {
-                  return `Outlier: ${context.parsed.y.toFixed(2)} ${unit}`;
+                  return `Outlier: ${formatNumberPtBR(context.parsed.y, 2)} ${unit}`;
                 }
                 if (label === 'Extremos') {
-                  return `Extremo: ${context.parsed.y.toFixed(2)} ${unit}`;
+                  return `Extremo: ${formatNumberPtBR(context.parsed.y, 2)} ${unit}`;
                 }
                 if (context.datasetIndex !== 2) return '';
                 const item = chartData[context.dataIndex];
                 if (!item) return '';
                 const outliersStr = item.outliers && item.outliers.length > 0 
-                  ? item.outliers.map((v: number) => v.toFixed(2)).join(', ') 
+                  ? item.outliers.map((v: number) => formatNumberPtBR(v, 2)).join(', ') 
                   : 'Nenhum';
                 const extremesStr = item.extremes && item.extremes.length > 0 
-                  ? item.extremes.map((v: number) => v.toFixed(2)).join(', ') 
+                  ? item.extremes.map((v: number) => formatNumberPtBR(v, 2)).join(', ') 
                   : 'Nenhum';
                 return [
-                  `Whisker Inferior: ${item.whiskerMin.toFixed(2)} ${unit}`,
-                  `Q1 (25%): ${item.realQ1.toFixed(2)} ${unit}`,
-                  `Mediana: ${item.realMedian.toFixed(2)} ${unit}`,
-                  `Q3 (75%): ${item.realQ3.toFixed(2)} ${unit}`,
-                  `Whisker Superior: ${item.whiskerMax.toFixed(2)} ${unit}`,
-                  `Desvio Padrão: ${item.stdDev.toFixed(2)} ${unit}`,
+                  `Whisker Inferior: ${formatNumberPtBR(item.whiskerMin, 2)} ${unit}`,
+                  `Q1 (25%): ${formatNumberPtBR(item.realQ1, 2)} ${unit}`,
+                  `Mediana: ${formatNumberPtBR(item.realMedian, 2)} ${unit}`,
+                  `Q3 (75%): ${formatNumberPtBR(item.realQ3, 2)} ${unit}`,
+                  `Whisker Superior: ${formatNumberPtBR(item.whiskerMax, 2)} ${unit}`,
+                  `Desvio Padrão: ${formatNumberPtBR(item.stdDev, 2)} ${unit}`,
                   `Outliers: ${outliersStr} ${unit}`,
                   `Extremos: ${extremesStr} ${unit}`
                 ];
@@ -976,7 +977,7 @@ const ProfessionalChartCard: React.FC<ChartCardProps> = ({
                 if (isRevenue) {
                   label += 'R$ ' + context.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 } else {
-                  label += context.parsed.y.toFixed(2) + ' t';
+                  label += formatNumberPtBR(context.parsed.y, 2) + ' t';
                 }
               }
               return label;
@@ -1021,8 +1022,8 @@ const ProfessionalChartCard: React.FC<ChartCardProps> = ({
             },
             callback: function(value: any) {
               if (isRevenue) {
-                if (value >= 1000000) return 'R$ ' + (value / 1000000).toFixed(1) + 'M';
-                if (value >= 1000) return 'R$ ' + (value / 1000).toFixed(0) + 'k';
+                if (value >= 1000000) return 'R$ ' + formatNumberPtBR(value / 1000000, 1) + 'M';
+                if (value >= 1000) return 'R$ ' + formatNumberPtBR(value / 1000, 0) + 'k';
                 return 'R$ ' + value;
               }
               return value;
@@ -1272,11 +1273,11 @@ const ProfessionalChartCard: React.FC<ChartCardProps> = ({
                                   {isRevenue 
                                     ? `R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
                                     : isCpue 
-                                      ? `${val.toFixed(2)} kg/dia`
-                                      : (val >= 0.01 ? `${val.toFixed(2)} t` : `${(val * 1000).toFixed(0)} kg`)}
+                                      ? `${formatNumberPtBR(val, 2)} kg/dia`
+                                      : (val >= 0.01 ? `${formatNumberPtBR(val, 2)} t` : `${formatNumberPtBR(val * 1000, 0)} kg`)}
                                 </span>
                                 <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold">
-                                  {pct.toFixed(1)}%
+                                  {formatNumberPtBR(pct, 1)}%
                                 </span>
                               </div>
                             </td>
@@ -1305,9 +1306,9 @@ const ProfessionalChartCard: React.FC<ChartCardProps> = ({
                       }
                       if (isCpue) {
                         const avg = chartData.length > 0 ? total / chartData.length : 0;
-                        return `${avg.toFixed(2)} kg/dia`;
+                        return `${formatNumberPtBR(avg, 2)} kg/dia`;
                       }
-                      return total >= 0.01 ? `${total.toFixed(2)} t` : `${(total * 1000).toFixed(0)} kg`;
+                      return total >= 0.01 ? `${formatNumberPtBR(total, 2)} t` : `${formatNumberPtBR(total * 1000, 0)} kg`;
                     })()}
                   </span>
                 </div>
@@ -1344,11 +1345,11 @@ const ProfessionalChartCard: React.FC<ChartCardProps> = ({
                                   {isRevenue 
                                     ? `R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
                                     : isCpue 
-                                      ? `${val.toFixed(2)} kg/dia`
-                                      : (val >= 0.01 ? `${val.toFixed(2)} t` : `${(val * 1000).toFixed(0)} kg`)}
+                                      ? `${formatNumberPtBR(val, 2)} kg/dia`
+                                      : (val >= 0.01 ? `${formatNumberPtBR(val, 2)} t` : `${formatNumberPtBR(val * 1000, 0)} kg`)}
                                 </span>
                                 <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold">
-                                  {pct.toFixed(1)}%
+                                  {formatNumberPtBR(pct, 1)}%
                                 </span>
                               </div>
                             </td>
@@ -1377,9 +1378,9 @@ const ProfessionalChartCard: React.FC<ChartCardProps> = ({
                       }
                       if (isCpue) {
                         const avg = chartData.length > 0 ? total / chartData.length : 0;
-                        return `${avg.toFixed(2)} kg/dia`;
+                        return `${formatNumberPtBR(avg, 2)} kg/dia`;
                       }
-                      return total >= 0.01 ? `${total.toFixed(2)} t` : `${(total * 1000).toFixed(0)} kg`;
+                      return total >= 0.01 ? `${formatNumberPtBR(total, 2)} t` : `${formatNumberPtBR(total * 1000, 0)} kg`;
                     })()}
                   </span>
                 </div>
@@ -1975,7 +1976,7 @@ const Dashboard: React.FC<Props> = ({ forms, onNewForm, speciesList = [] }) => {
                 <div className="flex justify-between items-start w-full relative z-10">
                   <div>
                     <p className="text-blue-100 text-[10px] font-black uppercase tracking-widest mb-1">Produção Total</p>
-                    <p className="text-4xl font-black">{stats.totalTons.toFixed(2)} <span className="text-xl opacity-60">t</span></p>
+                    <p className="text-4xl font-black">{formatNumberPtBR(stats.totalTons, 2)} <span className="text-xl opacity-60">t</span></p>
                   </div>
                   <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md">
                     <TrendingUp size={20} />
@@ -1985,7 +1986,7 @@ const Dashboard: React.FC<Props> = ({ forms, onNewForm, speciesList = [] }) => {
                 {/* Badge do período anterior */}
                 <div className="relative z-10">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 text-white rounded-lg text-xs font-semibold">
-                    <span className="font-bold">{stats.tonsDiffPct >= 0 ? '↑' : '↓'} {Math.abs(stats.tonsDiffPct).toFixed(1)}%</span>
+                    <span className="font-bold">{stats.tonsDiffPct >= 0 ? '↑' : '↓'} {formatNumberPtBR(Math.abs(stats.tonsDiffPct), 1)}%</span>
                     <span className="text-blue-100 opacity-85 text-[10px] font-normal">vs mês anterior</span>
                   </div>
                 </div>
@@ -2013,7 +2014,7 @@ const Dashboard: React.FC<Props> = ({ forms, onNewForm, speciesList = [] }) => {
                 {/* Badge do período anterior */}
                 <div>
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-semibold">
-                    <span className="font-bold">{stats.valueDiffPct >= 0 ? '↑' : '↓'} {Math.abs(stats.valueDiffPct).toFixed(1)}%</span>
+                    <span className="font-bold">{stats.valueDiffPct >= 0 ? '↑' : '↓'} {formatNumberPtBR(Math.abs(stats.valueDiffPct), 1)}%</span>
                     <span className="text-slate-400 dark:text-slate-500 text-[10px] font-normal">vs mês anterior</span>
                   </div>
                 </div>
@@ -2033,7 +2034,7 @@ const Dashboard: React.FC<Props> = ({ forms, onNewForm, speciesList = [] }) => {
                    <div key={idx} className="space-y-1.5">
                       <div className="flex justify-between items-end">
                         <span className="text-xs font-bold text-slate-200 uppercase">{s.name}</span>
-                        <span className="text-[10px] font-black text-blue-400">{s.weight.toFixed(2)} t</span>
+                        <span className="text-[10px] font-black text-blue-400">{formatNumberPtBR(s.weight, 2)} t</span>
                       </div>
                       <div className="h-2 w-full bg-slate-800 rounded-full">
                         <div className="h-full bg-blue-500 rounded-full" style={{ width: `${(s.weight / stats.topSpecies[0].weight) * 100}%` }}></div>
@@ -2080,7 +2081,7 @@ const Dashboard: React.FC<Props> = ({ forms, onNewForm, speciesList = [] }) => {
                                   ? 'text-blue-600 dark:text-blue-400' 
                                   : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-100'
                               }`}>
-                                {f.totalTons.toFixed(2)} <span className="text-[10px] font-normal text-slate-400">t</span>
+                                {formatNumberPtBR(f.totalTons, 2)} <span className="text-[10px] font-normal text-slate-400">t</span>
                               </span>
                             </div>
 
@@ -2130,7 +2131,7 @@ const Dashboard: React.FC<Props> = ({ forms, onNewForm, speciesList = [] }) => {
                   <span className="text-3xl font-black text-slate-800 dark:text-slate-100 mt-1">{stats.desembarquesCount}</span>
                   <div className="flex items-center gap-0.5 text-xs font-extrabold text-emerald-500 dark:text-emerald-400 mt-1.5">
                     <span>{stats.desembarquesDiffPct >= 0 ? '↑' : '↓'}</span>
-                    <span>{Math.abs(stats.desembarquesDiffPct).toFixed(1)}%</span>
+                    <span>{formatNumberPtBR(Math.abs(stats.desembarquesDiffPct), 1)}%</span>
                   </div>
                 </div>
 
@@ -2143,7 +2144,7 @@ const Dashboard: React.FC<Props> = ({ forms, onNewForm, speciesList = [] }) => {
                   <span className="text-3xl font-black text-slate-800 dark:text-slate-100 mt-1">{stats.pescadoresCount}</span>
                   <div className="flex items-center gap-0.5 text-xs font-extrabold text-emerald-500 dark:text-emerald-400 mt-1.5">
                     <span>{stats.pescadoresDiffPct >= 0 ? '↑' : '↓'}</span>
-                    <span>{Math.abs(stats.pescadoresDiffPct).toFixed(1)}%</span>
+                    <span>{formatNumberPtBR(Math.abs(stats.pescadoresDiffPct), 1)}%</span>
                   </div>
                 </div>
 
@@ -2156,7 +2157,7 @@ const Dashboard: React.FC<Props> = ({ forms, onNewForm, speciesList = [] }) => {
                   <span className="text-3xl font-black text-slate-800 dark:text-slate-100 mt-1">{stats.especiesCount}</span>
                   <div className="flex items-center gap-0.5 text-xs font-extrabold text-emerald-500 dark:text-emerald-400 mt-1.5">
                     <span>{stats.especiesDiffPct >= 0 ? '↑' : '↓'}</span>
-                    <span>{Math.abs(stats.especiesDiffPct).toFixed(1)}%</span>
+                    <span>{formatNumberPtBR(Math.abs(stats.especiesDiffPct), 1)}%</span>
                   </div>
                 </div>
 
@@ -2169,7 +2170,7 @@ const Dashboard: React.FC<Props> = ({ forms, onNewForm, speciesList = [] }) => {
                   <span className="text-3xl font-black text-slate-800 dark:text-slate-100 mt-1">{stats.localidadesCount}</span>
                   <div className="flex items-center gap-0.5 text-xs font-extrabold text-emerald-500 dark:text-emerald-400 mt-1.5">
                     <span>{stats.localidadesDiffPct >= 0 ? '↑' : '↓'}</span>
-                    <span>{Math.abs(stats.localidadesDiffPct).toFixed(1)}%</span>
+                    <span>{formatNumberPtBR(Math.abs(stats.localidadesDiffPct), 1)}%</span>
                   </div>
                 </div>
               </div>
@@ -2425,7 +2426,7 @@ const Dashboard: React.FC<Props> = ({ forms, onNewForm, speciesList = [] }) => {
                           <td className="py-3 pl-4 text-right">
                             <div className="flex flex-col items-end">
                               <span className="text-xs font-extrabold text-slate-850 dark:text-slate-100">
-                                {item.totalWeight >= 0.01 ? `${item.totalWeight.toFixed(2)} t` : `${(item.totalWeight * 1000).toFixed(0)} kg`}
+                                {item.totalWeight >= 0.01 ? `${formatNumberPtBR(item.totalWeight, 2)} t` : `${formatNumberPtBR(item.totalWeight * 1000, 0)} kg`}
                               </span>
                               <div className="w-16 bg-slate-100 dark:bg-slate-800 h-1 rounded-full mt-1 overflow-hidden">
                                 <div className="h-full bg-blue-500 rounded-full" style={{ width: `${pct}%` }}></div>
@@ -2597,8 +2598,8 @@ const Dashboard: React.FC<Props> = ({ forms, onNewForm, speciesList = [] }) => {
                 <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest block mb-1">Produção Acumulada</span>
                 <span className="text-3xl font-black text-slate-900 dark:text-slate-100">
                   {reportsStats.totalWeight >= 1000 
-                    ? `${(reportsStats.totalWeight / 1000).toFixed(2)} t` 
-                    : `${reportsStats.totalWeight.toFixed(0)} kg`}
+                    ? `${formatNumberPtBR(reportsStats.totalWeight / 1000, 2)} t` 
+                    : `${formatNumberPtBR(reportsStats.totalWeight, 0)} kg`}
                 </span>
               </div>
               <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center">
@@ -2610,7 +2611,7 @@ const Dashboard: React.FC<Props> = ({ forms, onNewForm, speciesList = [] }) => {
               <div>
                 <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest block mb-1">CPUE Médio Geral</span>
                 <span className="text-3xl font-black text-slate-900 dark:text-slate-100">
-                  {reportsStats.avgCpue.toFixed(1)} <span className="text-xs font-bold text-slate-400">kg/dia</span>
+                  {formatNumberPtBR(reportsStats.avgCpue, 1)} <span className="text-xs font-bold text-slate-400">kg/dia</span>
                 </span>
               </div>
               <div className="w-12 h-12 bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 rounded-2xl flex items-center justify-center">
@@ -2626,7 +2627,7 @@ const Dashboard: React.FC<Props> = ({ forms, onNewForm, speciesList = [] }) => {
                 </span>
                 <span className="text-[11px] text-slate-500 font-bold block">
                   {reportsStats.bestProducer 
-                    ? `${(reportsStats.bestProducer.totalWeight / 1000).toFixed(2)} t capturadas` 
+                    ? `${formatNumberPtBR(reportsStats.bestProducer.totalWeight / 1000, 2)} t capturadas` 
                     : 'Sem registros'}
                 </span>
               </div>
@@ -2674,7 +2675,7 @@ const Dashboard: React.FC<Props> = ({ forms, onNewForm, speciesList = [] }) => {
                         <td className="py-4 px-4 font-bold text-slate-800 dark:text-slate-200 uppercase">{f.name}</td>
                         <td className="py-4 px-4 text-center">{f.tripsCount}</td>
                         <td className="py-4 px-4 text-right font-mono">{f.totalWeight.toLocaleString('pt-BR')} kg</td>
-                        <td className="py-4 px-4 text-right font-mono text-blue-600 dark:text-blue-400">{f.cpue.toFixed(1)}</td>
+                        <td className="py-4 px-4 text-right font-mono text-blue-600 dark:text-blue-400">{formatNumberPtBR(f.cpue, 1)}</td>
                         <td className="py-4 px-4 text-right font-mono text-emerald-600 dark:text-emerald-400">
                           {f.totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </td>

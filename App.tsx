@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   PlusCircle, 
   History, 
@@ -85,6 +85,15 @@ const INITIAL_SPECIES_LIST: Species[] = [
   { id: 'spec-5', commonName: 'Sururu', scientificName: 'Anomalocardia flexuosa' }
 ];
 
+// Versão do esquema de sincronização local.
+// Ao incrementar este valor, o app força UMA reconstrução completa do cache
+// na próxima sincronização, reconciliando dados antigos/desatualizados com o
+// servidor (inclusive exclusões e edições feitas em outros dispositivos).
+const SYNC_SCHEMA_VERSION = '3';
+const SYNC_SCHEMA_KEY = 'fishery_sync_schema_version';
+// Intervalo mínimo entre sincronizações automáticas ao recuperar o foco.
+const FOCUS_SYNC_THROTTLE_MS = 60 * 1000;
+
 const App: React.FC = () => {
   const [activeTab, setActiveTabRaw] = useState<'dashboard' | 'form' | 'history' | 'bulk' | 'profile' | 'cadastros' | 'worms'>('dashboard');
 
@@ -150,6 +159,8 @@ const App: React.FC = () => {
   const [syncError, setSyncError] = useState<string | null>(null);
   const [showSchemaModal, setShowSchemaModal] = useState(false);
   const [showQuickTips, setShowQuickTips] = useState(false);
+  // Controle de throttling da revalidação automática ao recuperar foco.
+  const lastFocusSyncRef = useRef<number>(Date.now());
 
   // PWA & Connectivity States
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -187,18 +198,13 @@ const App: React.FC = () => {
     localStorage.setItem('fishery_theme', theme);
   }, [theme]);
 
-  // Estados de Autenticação Supabase com inicialização resiliente
-  const [user, setUser] = useState<any>(() => {
-    try {
-      const cached = localStorage.getItem('fishery_cached_user');
-      return cached ? JSON.parse(cached) : null;
-    } catch (e) {
-      return null;
-    }
-  });
-  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(() => {
-    return !localStorage.getItem('fishery_cached_user');
-  });
+  // Estados de Autenticação Supabase.
+  // IMPORTANTE: o usuário NUNCA é inicializado a partir do cache local.
+  // Apenas uma sessão válida do Supabase autentica o app. Isso garante que a
+  // tela de login apareça quando não houver sessão ativa e evita gravações
+  // bloqueadas por RLS (que pareciam "não sincronizar").
+  const [user, setUser] = useState<any>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(isSupabaseConfigured);
 
   // 1. Carregar cache local de forma assíncrona usando IndexedDB com fallback para LocalStorage
   useEffect(() => {
@@ -301,19 +307,6 @@ const App: React.FC = () => {
   useEffect(() => {
     if (isSupabaseConfigured && supabase) {
       setIsAuthLoading(true);
-      
-      // Tenta carregar o usuário persistido localmente de início para evitar telas de bloqueio offline
-      const cachedUserStr = localStorage.getItem('fishery_cached_user');
-      if (cachedUserStr) {
-        try {
-          const parsedUser = JSON.parse(cachedUserStr);
-          if (parsedUser) {
-            setUser(parsedUser);
-          }
-        } catch (e) {
-          console.error("Erro ao recuperar perfil cacheado offline:", e);
-        }
-      }
 
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
@@ -321,10 +314,19 @@ const App: React.FC = () => {
           localStorage.setItem('fishery_cached_user', JSON.stringify(session.user));
           // Salva os dados de login no banco de dados do Supabase
           registerUserProfileInDatabase(session.user);
+        } else {
+          // Sem sessão válida: NÃO usa o cache para entrar automaticamente.
+          // Limpa o cache antigo e deixa o LoginForm ser exibido.
+          setUser(null);
+          localStorage.removeItem('fishery_cached_user');
         }
         setIsAuthLoading(false);
       }).catch(err => {
         console.error("Erro ao carregar sessão inicial:", err);
+        // Em caso de falha de rede, não confia no cache: exige login
+        // (o usuário ainda pode entrar com as credenciais offline validadas).
+        setUser(null);
+        localStorage.removeItem('fishery_cached_user');
         setIsAuthLoading(false);
       });
 
@@ -457,95 +459,139 @@ const App: React.FC = () => {
   };
 
   // 2. Carregar dados reais e frescos do Supabase (Apenas se configurado e autenticado)
-  useEffect(() => {
+  const syncFromSupabase = useCallback(async (options?: { silent?: boolean }) => {
     const configErr = getSupabaseError();
     if (configErr) {
       setSyncError(configErr);
       return;
     }
 
-    if (isSupabaseConfigured && user) {
-      const syncFromSupabase = async () => {
-        try {
-          setIsSyncing(true);
-          setSyncError(null);
-          
-          let cloudForms: LandingForm[] = [];
-          try {
-            cloudForms = await getSupabaseForms((incrementalForms, progress) => {
-              setSyncProgress(progress);
-            });
-          } catch (e: any) {
-            console.warn("Aviso: Falha ao carregar formulários do Supabase. Carregando dados locais.", e);
-            cloudForms = await dbGetAllForms();
-            // Apenas definimos um erro visual se o usuário estiver online e não for erro de conexão padrão
-            if (navigator.onLine && e?.message && !e.message.includes("failed to fetch")) {
-              setSyncError(`Aviso de conexão: ${getErrorMessage(e)}. Exibindo dados salvos localmente.`);
-            }
-          }
-          
-          let cloudFishermen: Fisherman[] = [];
-          try {
-            cloudFishermen = await getSupabaseFishermen();
-          } catch (e) {
-            console.warn("Aviso: Falha ao carregar pescadores do Supabase. Carregando dados locais.", e);
-            cloudFishermen = await dbGet<Fisherman[]>('fishery_fishermen') || [];
-          }
-          
-          let cloudSpecies: Species[] = [];
-          try {
-            cloudSpecies = await getSupabaseSpecies();
-          } catch (e) {
-            console.warn("Aviso: Falha ao carregar espécies do Supabase. Carregando dados locais.", e);
-            cloudSpecies = await dbGet<Species[]>('fishery_species') || [];
-          }
-          
-          setForms(cloudForms);
-          setFishermen(cloudFishermen);
-          
-          if (cloudSpecies && cloudSpecies.length >= INITIAL_SPECIES_LIST.length) {
-            setSpeciesList(cloudSpecies);
-            await dbSet('fishery_species', cloudSpecies);
-          } else {
-            const merged = [...INITIAL_SPECIES_LIST];
-            if (cloudSpecies && cloudSpecies.length > 0) {
-              cloudSpecies.forEach((p: Species) => {
-                const lower = p.commonName ? p.commonName.toLowerCase().trim() : '';
-                if (lower && !merged.some(m => m.commonName.toLowerCase().trim() === lower)) {
-                  merged.push(p);
-                }
-              });
-            }
-            setSpeciesList(merged);
-            await dbSet('fishery_species', merged);
-            
-            // Auto sincroniza espécies com o Supabase se necessário
-            if (navigator.onLine) {
-              try {
-                await insertMultipleSupabaseSpecies(merged);
-              } catch (e) {
-                console.warn("Dica: Se a tabela 'species' ainda não estiver criada no Supabase SQL Editor, faça isso para registrar todas as espécies automaticamente.", e);
-              }
-            }
-          }
-          
-          // Atualiza cache local de alta capacidade no IndexedDB
-          await dbSet('fishery_fishermen', cloudFishermen);
-          setSyncProgress(null); // Clear progress when completely synced
-          showToast('success', 'Sincronização Concluída', 'Seus dados foram atualizados com o servidor com sucesso.');
-        } catch (err: any) {
-          console.error("Erro geral no sincronismo automático do Supabase:", err);
-          if (navigator.onLine) {
-            setSyncError(`Erro de conexão com o Supabase: ${getErrorMessage(err)}. Verifique suas chaves e tabelas.`);
-          }
-        } finally {
-          setIsSyncing(false);
-        }
-      };
+    if (!isSupabaseConfigured || !user) return;
 
-      syncFromSupabase();
+    try {
+      setIsSyncing(true);
+      setSyncError(null);
+
+      // Versão do esquema de sincronização: força UMA reconstrução completa
+      // após atualizações que alteram o formato/marcadores de sincronização.
+      // Isso garante que caches antigos (possivelmente desatualizados) sejam
+      // reconciliados com o servidor, incluindo edições e exclusões.
+      if (localStorage.getItem(SYNC_SCHEMA_KEY) !== SYNC_SCHEMA_VERSION) {
+        console.log('[Sync] Nova versão de sincronização detectada. Reconstruindo cache local completo...');
+        await dbRemove('fishery_forms_sync_completed');
+        await dbRemove('fishery_forms_last_sync_id');
+        localStorage.setItem(SYNC_SCHEMA_KEY, SYNC_SCHEMA_VERSION);
+      }
+
+      let cloudForms: LandingForm[] = [];
+      try {
+        cloudForms = await getSupabaseForms((incrementalForms, progress) => {
+          setSyncProgress(progress);
+        });
+      } catch (e: any) {
+        console.warn("Aviso: Falha ao carregar formulários do Supabase. Carregando dados locais.", e);
+        cloudForms = await dbGetAllForms();
+        // Apenas definimos um erro visual se o usuário estiver online e não for erro de conexão padrão
+        if (navigator.onLine && e?.message && !e.message.includes("failed to fetch")) {
+          setSyncError(`Aviso de conexão: ${getErrorMessage(e)}. Exibindo dados salvos localmente.`);
+        }
+      }
+
+      let cloudFishermen: Fisherman[] = [];
+      try {
+        cloudFishermen = await getSupabaseFishermen();
+      } catch (e) {
+        console.warn("Aviso: Falha ao carregar pescadores do Supabase. Carregando dados locais.", e);
+        cloudFishermen = await dbGet<Fisherman[]>('fishery_fishermen') || [];
+      }
+
+      let cloudSpecies: Species[] = [];
+      try {
+        cloudSpecies = await getSupabaseSpecies();
+      } catch (e) {
+        console.warn("Aviso: Falha ao carregar espécies do Supabase. Carregando dados locais.", e);
+        cloudSpecies = await dbGet<Species[]>('fishery_species') || [];
+      }
+
+      setForms(cloudForms);
+      setFishermen(cloudFishermen);
+
+      if (cloudSpecies && cloudSpecies.length >= INITIAL_SPECIES_LIST.length) {
+        setSpeciesList(cloudSpecies);
+        await dbSet('fishery_species', cloudSpecies);
+      } else {
+        const merged = [...INITIAL_SPECIES_LIST];
+        if (cloudSpecies && cloudSpecies.length > 0) {
+          cloudSpecies.forEach((p: Species) => {
+            const lower = p.commonName ? p.commonName.toLowerCase().trim() : '';
+            if (lower && !merged.some(m => m.commonName.toLowerCase().trim() === lower)) {
+              merged.push(p);
+            }
+          });
+        }
+        setSpeciesList(merged);
+        await dbSet('fishery_species', merged);
+
+        // Auto sincroniza espécies com o Supabase se necessário
+        if (navigator.onLine) {
+          try {
+            await insertMultipleSupabaseSpecies(merged);
+          } catch (e) {
+            console.warn("Dica: Se a tabela 'species' ainda não estiver criada no Supabase SQL Editor, faça isso para registrar todas as espécies automaticamente.", e);
+          }
+        }
+      }
+
+      // Atualiza cache local de alta capacidade no IndexedDB
+      await dbSet('fishery_fishermen', cloudFishermen);
+      setSyncProgress(null); // Clear progress when completely synced
+      if (!options?.silent) {
+        showToast('success', 'Sincronização Concluída', 'Seus dados foram atualizados com o servidor com sucesso.');
+      }
+    } catch (err: any) {
+      console.error("Erro geral no sincronismo automático do Supabase:", err);
+      if (navigator.onLine) {
+        setSyncError(`Erro de conexão com o Supabase: ${getErrorMessage(err)}. Verifique suas chaves e tabelas.`);
+      }
+    } finally {
+      lastFocusSyncRef.current = Date.now();
+      setIsSyncing(false);
     }
-  }, [user]);
+  }, [user, showToast]);
+
+  useEffect(() => {
+    void syncFromSupabase();
+  }, [syncFromSupabase]);
+
+  // 2b. Revalidação automática (throttled) ao recuperar foco/visibilidade ou
+  // reconectar. Garante que alterações feitas no site/outros dispositivos
+  // apareçam no app desktop/mobile sem precisar de sincronização manual.
+  useEffect(() => {
+    if (!isSupabaseConfigured || !user) return;
+
+    const maybeSync = () => {
+      if (document.visibilityState === 'hidden') return;
+      if (!navigator.onLine) return;
+      const now = Date.now();
+      if (now - lastFocusSyncRef.current < FOCUS_SYNC_THROTTLE_MS) return;
+      lastFocusSyncRef.current = now;
+      void syncFromSupabase({ silent: true });
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') maybeSync();
+    };
+
+    window.addEventListener('focus', maybeSync);
+    window.addEventListener('online', maybeSync);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', maybeSync);
+      window.removeEventListener('online', maybeSync);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, syncFromSupabase]);
 
 
 
@@ -1059,6 +1105,7 @@ const App: React.FC = () => {
       localStorage.removeItem('fishery_forms');
       localStorage.removeItem('fishery_fishermen');
       localStorage.removeItem('fishery_species');
+      localStorage.removeItem('fishery_cached_user');
       sessionStorage.removeItem('fishery_skipped_auth');
       
       // 2. Limpar os estados do React

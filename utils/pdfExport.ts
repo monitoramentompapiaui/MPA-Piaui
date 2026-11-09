@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { LandingForm } from '../types';
+import { formatNumberPtBR } from './numberUtils';
 
 const SCIENTIFIC_NAMES: Record<string, string> = {
   'caranguejo uçá': 'Ucides cordatus',
@@ -436,10 +437,10 @@ export const exportToPdf = (data: LandingForm[], filters: FilterParams): void =>
     doc.text(name, leftColX + 4, spRowY + 3.6);
 
     doc.setFont('Helvetica', 'normal');
-    doc.text((sp.weight / 1000).toFixed(3) + ' t', leftColX + 54, spRowY + 3.6, { align: 'right' });
+    doc.text(formatTons(sp.weight), leftColX + 54, spRowY + 3.6, { align: 'right' });
     
     doc.setFont('Helvetica', 'bold');
-    doc.text((sp.revenue >= 1000000 ? `R$ ${(sp.revenue / 1000000).toFixed(2)}M` : `R$ ${(sp.revenue / 1000).toFixed(1)}k`), leftColX + 82, spRowY + 3.6, { align: 'right' });
+    doc.text((sp.revenue >= 1000000 ? `R$ ${formatNumberPtBR(sp.revenue / 1000000, 2)}M` : `R$ ${formatNumberPtBR(sp.revenue / 1000, 1)}k`), leftColX + 82, spRowY + 3.6, { align: 'right' });
 
     spRowY += rowH;
   });
@@ -485,7 +486,7 @@ export const exportToPdf = (data: LandingForm[], filters: FilterParams): void =>
     doc.text(`${loc.count} f`, rightColX + 54, locRowY + 3.6, { align: 'right' });
 
     doc.setFont('Helvetica', 'bold');
-    doc.text((loc.weight / 1000).toFixed(3) + ' t', rightColX + 82, locRowY + 3.6, { align: 'right' });
+    doc.text(formatTons(loc.weight), rightColX + 82, locRowY + 3.6, { align: 'right' });
 
     locRowY += rowH;
   });
@@ -540,7 +541,7 @@ export const exportToPdf = (data: LandingForm[], filters: FilterParams): void =>
     doc.text(`${g.count} saídas`, leftColX + 54, gearRowY + 3.6, { align: 'right' });
 
     doc.setFont('Helvetica', 'bold');
-    doc.text((g.weight / 1000).toFixed(3) + ' t', leftColX + 82, gearRowY + 3.6, { align: 'right' });
+    doc.text(formatTons(g.weight), leftColX + 82, gearRowY + 3.6, { align: 'right' });
 
     gearRowY += rowH;
   });

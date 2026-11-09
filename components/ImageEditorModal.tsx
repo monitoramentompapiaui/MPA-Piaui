@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RotateCw, RefreshCw, Check, X, ZoomIn, Info } from 'lucide-react';
+import { formatNumberPtBR } from '../utils/numberUtils';
 
 interface ImageEditorModalProps {
   isOpen: boolean;
@@ -444,7 +445,7 @@ export default function ImageEditorModal({ isOpen, onClose, imageSrc, onConfirm 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-xs font-bold text-slate-550 uppercase tracking-wider">
                     <span className="flex items-center gap-1"><ZoomIn size={14} className="text-blue-600" /> Zoom da Imagem</span>
-                    <span className="text-blue-600 font-extrabold bg-blue-50 px-2 py-0.5 rounded-md text-[11px]">{zoom.toFixed(2)}x</span>
+                    <span className="text-blue-600 font-extrabold bg-blue-50 px-2 py-0.5 rounded-md text-[11px]">{formatNumberPtBR(zoom, 2)}x</span>
                   </div>
                   <input 
                     type="range" 

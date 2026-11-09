@@ -10,7 +10,7 @@ import {
 } from '../types';
 import { getMoonPhasesForRange } from '../utils/moonPhase';
 import { generateId } from '../utils/uuid';
-import { parsePortugueseNumber } from '../utils/numberUtils';
+import { parsePortugueseNumber, formatNumberPtBR } from '../utils/numberUtils';
 import { standardizeText, standardizeScientificName } from '../utils/textUtils';
 import { GEAR_STRUCTURE, getGeneralGearType, ALL_GENERAL_GEARS, ALL_SPECIFIC_GEARS } from '../utils/gearUtils';
 import { 
@@ -1357,10 +1357,10 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-3 border-t border-indigo-100/50 dark:border-indigo-900/30">
                       <div className="flex flex-wrap gap-6 text-xs font-medium">
                         <div className="text-slate-600 dark:text-slate-400">
-                          ⚖️ Peso Estimado: <strong className="text-indigo-800 dark:text-indigo-300 text-sm">{(parseFloat(numCordas) * parseFloat(numExemplares) * parseFloat(pesoIndividual) || 0).toFixed(2)} kg</strong>
+                          ⚖️ Peso Estimado: <strong className="text-indigo-800 dark:text-indigo-300 text-sm">{formatNumberPtBR(parseFloat(numCordas) * parseFloat(numExemplares) * parseFloat(pesoIndividual) || 0, 2)} kg</strong>
                         </div>
                         <div className="text-slate-600 dark:text-slate-400">
-                          💰 Receita Total: <strong className="text-indigo-800 dark:text-indigo-300 text-sm">R$ {(parseFloat(numCordas) * parseFloat(newItem.price) || 0).toFixed(2)}</strong>
+                          💰 Receita Total: <strong className="text-indigo-800 dark:text-indigo-300 text-sm">R$ {formatNumberPtBR(parseFloat(numCordas) * parseFloat(newItem.price) || 0, 2)}</strong>
                         </div>
                       </div>
                       <button 
@@ -1418,10 +1418,10 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-3 border-t border-purple-100/50 dark:border-purple-900/30">
                       <div className="flex flex-wrap gap-6 text-xs font-medium">
                         <div className="text-slate-600 dark:text-slate-400">
-                          ⚖️ Peso Estimado: <strong className="text-purple-800 dark:text-purple-300 text-sm">{(parseFloat(numSacos) * parseFloat(pesoSaco) || 0).toFixed(2)} kg</strong>
+                          ⚖️ Peso Estimado: <strong className="text-purple-800 dark:text-purple-300 text-sm">{formatNumberPtBR(parseFloat(numSacos) * parseFloat(pesoSaco) || 0, 2)} kg</strong>
                         </div>
                         <div className="text-slate-600 dark:text-slate-400">
-                          💰 Receita Total: <strong className="text-purple-800 dark:text-purple-300 text-sm">R$ {(parseFloat(numSacos) * parseFloat(newItem.price) || 0).toFixed(2)}</strong>
+                          💰 Receita Total: <strong className="text-purple-800 dark:text-purple-300 text-sm">R$ {formatNumberPtBR(parseFloat(numSacos) * parseFloat(newItem.price) || 0, 2)}</strong>
                         </div>
                       </div>
                       <button 
@@ -1489,10 +1489,10 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-3 border-t border-teal-100/50 dark:border-teal-900/30">
                       <div className="flex flex-wrap gap-6 text-xs font-medium">
                         <div className="text-slate-600 dark:text-slate-400">
-                          ⚖️ Peso Estimado: <strong className="text-teal-800 dark:text-teal-300 text-sm">{(parseFloat(numSacos) * parseFloat(pesoSaco) || 0).toFixed(2)} kg</strong>
+                          ⚖️ Peso Estimado: <strong className="text-teal-800 dark:text-teal-300 text-sm">{formatNumberPtBR(parseFloat(numSacos) * parseFloat(pesoSaco) || 0, 2)} kg</strong>
                         </div>
                         <div className="text-slate-600 dark:text-slate-400">
-                          💰 Receita Total: <strong className="text-teal-800 dark:text-teal-300 text-sm">R$ {(parseFloat(rendimentoPolpa) * parseFloat(newItem.price) || 0).toFixed(2)}</strong>
+                          💰 Receita Total: <strong className="text-teal-800 dark:text-teal-300 text-sm">R$ {formatNumberPtBR(parseFloat(rendimentoPolpa) * parseFloat(newItem.price) || 0, 2)}</strong>
                         </div>
                       </div>
                       <button 
@@ -1540,23 +1540,23 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
                         )}
                         {item.groupType === 'caranguejo_siri' && (
                           <span className="block text-[10px] text-indigo-600 dark:text-indigo-400 mt-1.5 font-semibold bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40 px-2 py-0.5 rounded-lg w-max shadow-sm">
-                            🦀 {item.numCordas} cordas × {item.numExemplares} exemplares × {item.pesoIndividual} kg | R$ {item.originalPrice?.toFixed(2)}/corda
+                            🦀 {item.numCordas} cordas × {item.numExemplares} exemplares × {formatNumberPtBR(item.pesoIndividual ?? 0, 2)} kg | R$ {formatNumberPtBR(item.originalPrice ?? 0, 2)}/corda
                           </span>
                         )}
                         {item.groupType === 'ostra' && (
                           <span className="block text-[10px] text-purple-600 dark:text-purple-400 mt-1.5 font-semibold bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/40 px-2 py-0.5 rounded-lg w-max shadow-sm">
-                            🦪 {item.numSacos} sacos × {item.pesoSaco} kg | R$ {item.originalPrice?.toFixed(2)}/saco
+                            🦪 {item.numSacos} sacos × {formatNumberPtBR(item.pesoSaco ?? 0, 2)} kg | R$ {formatNumberPtBR(item.originalPrice ?? 0, 2)}/saco
                           </span>
                         )}
                         {item.groupType === 'marisco' && (
                           <span className="block text-[10px] text-teal-600 dark:text-teal-400 mt-1.5 font-semibold bg-teal-50 dark:bg-teal-950/40 border border-teal-100 dark:border-teal-900/40 px-2 py-0.5 rounded-lg w-max shadow-sm">
-                            🐚 {item.numSacos} sacos × {item.pesoSaco} kg | Polpa: {item.rendimentoPolpa} kg × R$ {item.originalPrice?.toFixed(2)}/kg
+                            🐚 {item.numSacos} sacos × {formatNumberPtBR(item.pesoSaco ?? 0, 2)} kg | Polpa: {formatNumberPtBR(item.rendimentoPolpa ?? 0, 2)} kg × R$ {formatNumberPtBR(item.originalPrice ?? 0, 2)}/kg
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-300">{item.weight.toFixed(1)} kg</td>
-                      <td className="px-6 py-4 text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-300">R$ {item.price.toFixed(2)}</td>
-                      <td className="px-6 py-4 text-xs md:text-sm font-bold text-blue-600 dark:text-blue-400">R$ {(item.weight * item.price).toFixed(2)}</td>
+                      <td className="px-6 py-4 text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-300">{formatNumberPtBR(item.weight, 1)} kg</td>
+                      <td className="px-6 py-4 text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-300">R$ {formatNumberPtBR(item.price, 2)}</td>
+                      <td className="px-6 py-4 text-xs md:text-sm font-bold text-blue-600 dark:text-blue-400">R$ {formatNumberPtBR(item.weight * item.price, 2)}</td>
                       <td className="px-6 py-4 text-right">
                         <button 
                           onClick={() => removeProductionItem(item.id)}
@@ -1573,10 +1573,10 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
                 <tfoot className="bg-blue-50/50 dark:bg-blue-950/20 font-bold text-slate-800 dark:text-slate-200 border-t border-slate-200 dark:border-slate-850">
                   <tr>
                     <td className="px-6 py-4 text-sm font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300">Total Geral da Ficha</td>
-                    <td className="px-6 py-4 text-sm font-extrabold text-slate-800 dark:text-slate-100">{production.reduce((acc, curr) => acc + curr.weight, 0).toFixed(1)} kg</td>
+                    <td className="px-6 py-4 text-sm font-extrabold text-slate-800 dark:text-slate-100">{formatNumberPtBR(production.reduce((acc, curr) => acc + curr.weight, 0), 1)} kg</td>
                     <td className="px-6 py-4"></td>
                     <td className="px-6 py-4 text-base font-extrabold text-blue-700 dark:text-blue-400">
-                      R$ {production.reduce((acc, curr) => acc + (curr.weight * curr.price), 0).toFixed(2)}
+                      R$ {formatNumberPtBR(production.reduce((acc, curr) => acc + (curr.weight * curr.price), 0), 2)}
                     </td>
                     <td></td>
                   </tr>

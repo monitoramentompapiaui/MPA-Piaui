@@ -3,7 +3,7 @@ import React, { useState, useMemo, memo, useEffect, useCallback, useDeferredValu
 import { List as VirtualizedList } from 'react-window';
 import { LandingForm, Fisherman, Species, ProductionItem } from '../types';
 import { safeFormatDate, parseToISODate } from '../utils/dateUtils';
-import { parsePortugueseNumber } from '../utils/numberUtils';
+import { parsePortugueseNumber, formatNumberPtBR } from '../utils/numberUtils';
 import { standardizeText, standardizeScientificName } from '../utils/textUtils';
 import { GEAR_STRUCTURE, getGeneralGearType, ALL_GENERAL_GEARS, ALL_SPECIFIC_GEARS } from '../utils/gearUtils';
 import { 
@@ -298,17 +298,17 @@ const FormItem = memo(({
                                 <span className="font-semibold text-slate-800 dark:text-slate-100">{item.species}</span>
                                 {item.groupType === 'caranguejo_siri' && (
                                   <span className="block text-[10px] text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/40 px-1.5 py-0.5 rounded-md w-max mt-0.5">
-                                    🦀 {item.numCordas} cordas × {item.numExemplares} expl. × {item.pesoIndividual} kg | Preço: R$ {item.originalPrice?.toFixed(2)}/corda
+                                    🦀 {item.numCordas} cordas × {item.numExemplares} expl. × {formatNumberPtBR(item.pesoIndividual ?? 0, 2)} kg | Preço: R$ {formatNumberPtBR(item.originalPrice ?? 0, 2)}/corda
                                   </span>
                                 )}
                                 {item.groupType === 'ostra' && (
                                   <span className="block text-[10px] text-purple-600 dark:text-purple-400 font-medium bg-purple-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-900/40 px-1.5 py-0.5 rounded-md w-max mt-0.5">
-                                    🦪 {item.numSacos} sacos × {item.pesoSaco} kg | Preço: R$ {item.originalPrice?.toFixed(2)}/saco
+                                    🦪 {item.numSacos} sacos × {formatNumberPtBR(item.pesoSaco ?? 0, 2)} kg | Preço: R$ {formatNumberPtBR(item.originalPrice ?? 0, 2)}/saco
                                   </span>
                                 )}
                                 {item.groupType === 'marisco' && (
                                   <span className="block text-[10px] text-teal-600 dark:text-teal-400 font-medium bg-teal-50 dark:bg-teal-950/60 border border-teal-100 dark:border-teal-900/40 px-1.5 py-0.5 rounded-md w-max mt-0.5">
-                                    🐚 {item.numSacos} sacos × {item.pesoSaco} kg | Polpa: {item.rendimentoPolpa} kg × R$ {item.originalPrice?.toFixed(2)}/kg
+                                    🐚 {item.numSacos} sacos × {formatNumberPtBR(item.pesoSaco ?? 0, 2)} kg | Polpa: {formatNumberPtBR(item.rendimentoPolpa ?? 0, 2)} kg × R$ {formatNumberPtBR(item.originalPrice ?? 0, 2)}/kg
                                   </span>
                                 )}
                               </>
@@ -319,14 +319,14 @@ const FormItem = memo(({
                             {weightMissing ? (
                               <span className="text-red-700 font-extrabold bg-red-100 px-1.5 py-0.5 rounded-md text-[10px]">⚠️ PESO FALTANDO / INVÁLIDO</span>
                             ) : (
-                              <span className="font-bold text-slate-700 dark:text-slate-300">{item.weight.toFixed(1)} KG</span>
+                              <span className="font-bold text-slate-700 dark:text-slate-300">{formatNumberPtBR(item.weight, 1)} KG</span>
                             )}
                           </td>
                           <td className="py-2 px-3 text-right font-bold text-blue-600 dark:text-blue-450">
                             {weightMissing ? (
                               <span className="text-slate-400">---</span>
                             ) : (
-                              <span>R$ {(item.weight * item.price).toFixed(2)}</span>
+                              <span>R$ {formatNumberPtBR(item.weight * item.price, 2)}</span>
                             )}
                           </td>
                         </tr>
@@ -1440,24 +1440,24 @@ const MyFormsList: React.FC<Props> = ({
                               <span className="font-bold text-slate-800 dark:text-slate-200 block">{item.species}</span>
                               {item.groupType === 'caranguejo_siri' && (
                                 <span className="block text-[10px] text-indigo-600 dark:text-indigo-450 mt-0.5 font-medium">
-                                  🦀 {item.numCordas} cordas × {item.numExemplares} expl. × {item.pesoIndividual} kg
+                                  🦀 {item.numCordas} cordas × {item.numExemplares} expl. × {formatNumberPtBR(item.pesoIndividual ?? 0, 2)} kg
                                 </span>
                               )}
                               {item.groupType === 'ostra' && (
                                 <span className="block text-[10px] text-purple-600 dark:text-purple-405 mt-0.5 font-medium">
-                                  🦪 {item.numSacos} sacos × {item.pesoSaco} kg
+                                  🦪 {item.numSacos} sacos × {formatNumberPtBR(item.pesoSaco ?? 0, 2)} kg
                                 </span>
                               )}
                               {item.groupType === 'marisco' && (
                                 <span className="block text-[10px] text-teal-600 dark:text-teal-450 mt-0.5 font-medium">
-                                  🐚 {item.numSacos} sacos × {item.pesoSaco} kg | Polpa: {item.rendimentoPolpa} kg
+                                  🐚 {item.numSacos} sacos × {formatNumberPtBR(item.pesoSaco ?? 0, 2)} kg | Polpa: {formatNumberPtBR(item.rendimentoPolpa ?? 0, 2)} kg
                                 </span>
                               )}
                             </td>
                             <td className="py-3 px-3 italic text-slate-500 dark:text-slate-400">{item.scientificName || '---'}</td>
-                            <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">{item.weight ? `${item.weight.toFixed(1)} KG` : '---'}</td>
-                            <td className="py-3 px-3 text-right text-slate-700 dark:text-slate-300">R$ {item.price ? item.price.toFixed(2) : '0.00'}</td>
-                            <td className="py-3 px-3 text-right font-bold text-blue-600 dark:text-blue-400">R$ {item.weight && item.price ? (item.weight * item.price).toFixed(2) : '0.00'}</td>
+                            <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">{item.weight ? `${formatNumberPtBR(item.weight, 1)} KG` : '---'}</td>
+                            <td className="py-3 px-3 text-right text-slate-700 dark:text-slate-300">R$ {item.price ? formatNumberPtBR(item.price, 2) : '0,00'}</td>
+                            <td className="py-3 px-3 text-right font-bold text-blue-600 dark:text-blue-400">R$ {item.weight && item.price ? formatNumberPtBR(item.weight * item.price, 2) : '0,00'}</td>
                           </tr>
                         ))
                       )}

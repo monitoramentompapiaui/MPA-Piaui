@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { getUserProfile, updateUserProfile, supabase, isSupabaseConfigured } from '../utils/supabase';
 import { fetchLatestAppRelease, FALLBACK_APP_RELEASE, LatestAppRelease } from '../utils/appReleases';
+import { formatNumberPtBR } from '../utils/numberUtils';
 
 interface UserProfileTabProps {
   user: any;
@@ -50,9 +51,9 @@ const formatReleaseDate = (value: string | null): string => {
 const formatFileSize = (bytes?: number): string => {
   if (!bytes || bytes <= 0) return '';
   if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${formatNumberPtBR(bytes / 1024, 0)} KB`;
   }
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${formatNumberPtBR(bytes / (1024 * 1024), 1)} MB`;
 };
 
 const UserProfileTab: React.FC<UserProfileTabProps> = ({ 

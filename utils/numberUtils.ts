@@ -70,3 +70,26 @@ export const parsePortugueseNumber = (value: any): number => {
 
   return parseFloat(clean) || 0;
 };
+
+/**
+ * Formata um número no padrão brasileiro (vírgula decimal e ponto de milhar).
+ * Use em toda exibição de valores para o usuário, nunca em cálculos.
+ *
+ * Exemplos:
+ * - formatNumberPtBR(1112.8, 1) -> "1.112,8"
+ * - formatNumberPtBR(2346.35, 2) -> "2.346,35"
+ */
+export const formatNumberPtBR = (value: any, decimals = 2): string => {
+  const numeric = typeof value === 'number' ? value : parsePortugueseNumber(value);
+  const safeValue = Number.isFinite(numeric) ? numeric : 0;
+
+  return safeValue.toLocaleString('pt-BR', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  });
+};
+
+/**
+ * Formata um número inteiro no padrão brasileiro.
+ */
+export const formatIntegerPtBR = (value: any): string => formatNumberPtBR(value, 0);

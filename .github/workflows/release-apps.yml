@@ -44,6 +44,9 @@ jobs:
         with:
           node-version: 22
 
+      - name: Sincronizar versão do aplicativo
+        run: node scripts/set-version.mjs 1.0.${{ github.run_number }}
+
       - name: Instalar dependências web
         run: npm ci
 
@@ -88,6 +91,9 @@ jobs:
 
       - name: Instalar plataforma Android 36
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Sincronizar versão do aplicativo
+        run: node scripts/set-version.mjs 1.0.${{ github.run_number }}
 
       - name: Instalar dependências web
         run: npm ci

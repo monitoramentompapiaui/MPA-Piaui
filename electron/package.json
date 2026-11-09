@@ -1,6 +1,6 @@
 {
   "name": "infopesca-desktop",
-  "version": "1.0.1",
+  "version": "1.0.6",
   "description": "Infopesca - Monitoramento de Desembarques Pesqueiros",
   "main": "main.js",
   "scripts": {

@@ -585,6 +585,11 @@ const UserProfileTab: React.FC<UserProfileTabProps> = ({
             Versão: {isLoadingRelease ? 'consultando...' : appRelease.version}
           </span>
 
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/40 text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            App instalado: v{__APP_VERSION__}
+          </span>
+
           {appRelease.publishedAt && (
             <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-500 dark:text-slate-400">
               Publicada em {formatReleaseDate(appRelease.publishedAt)}

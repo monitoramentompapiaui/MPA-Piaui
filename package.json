@@ -27,6 +27,7 @@
     "@types/node": "^22.14.0",
     "@types/react-window": "^1.8.8",
     "@vitejs/plugin-react": "^5.0.0",
+    "electron": "^36.9.5",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }

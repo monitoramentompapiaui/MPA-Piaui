@@ -613,12 +613,22 @@ const App: React.FC = () => {
 
   // --- Funções de Mutação (Integração Local + Supabase) ---
 
+  const normalizeFormKey = (idNumber?: string, location?: string) => ({
+    id: (idNumber || '').trim(),
+    loc: (location || '').trim().toLowerCase().replace(/\s+/g, ' ')
+  });
+
   const saveForm = useCallback(async (newForm: LandingForm) => {
-    if (newForm.idNumber) {
-      const duplicateExists = forms.some(f => f.idNumber && f.idNumber.trim() === newForm.idNumber.trim());
+    const newKey = normalizeFormKey(newForm.idNumber, newForm.identification?.location);
+    if (newKey.id) {
+      const duplicateExists = forms.some(f => {
+        const existingKey = normalizeFormKey(f.idNumber, f.identification?.location);
+        return existingKey.id === newKey.id && existingKey.loc === newKey.loc;
+      });
       if (duplicateExists) {
-        showToast('error', 'Ficha Duplicada', `O número de ficha "${newForm.idNumber}" já está cadastrado no sistema.`);
-        alert(`Erro: O número de ficha "${newForm.idNumber}" já está cadastrado no banco de dados local. Por favor, insira um número diferente para evitar cadastros duplicados.`);
+        const locLabel = (newForm.identification?.location || '').trim() || 'esta localidade';
+        showToast('error', 'Ficha Duplicada', `A ficha nº "${newKey.id}" já está cadastrada para a localidade "${locLabel}".`);
+        alert(`Erro: A ficha nº "${newKey.id}" já está cadastrada para a localidade "${locLabel}". Cada localidade possui numeração independente. Por favor, verifique o número informado.`);
         return false;
       }
     }
@@ -658,6 +668,37 @@ const App: React.FC = () => {
   }, [user, showToast, forms]);
 
   const saveMultipleForms = useCallback(async (newForms: LandingForm[]) => {
+    const existingKeys = new Set(
+      forms
+        .map(f => {
+          const k = normalizeFormKey(f.idNumber, f.identification?.location);
+          return k.id ? `${k.loc}::${k.id}` : '';
+        })
+        .filter(Boolean)
+    );
+
+    const batchKeys = new Set<string>();
+    const conflicts: string[] = [];
+    for (const form of newForms) {
+      const k = normalizeFormKey(form.idNumber, form.identification?.location);
+      if (!k.id) continue;
+      const key = `${k.loc}::${k.id}`;
+      const locLabel = (form.identification?.location || '').trim() || 'localidade não informada';
+      if (existingKeys.has(key) || batchKeys.has(key)) {
+        conflicts.push(`Ficha ${k.id} (${locLabel})`);
+      } else {
+        batchKeys.add(key);
+      }
+    }
+
+    if (conflicts.length > 0) {
+      const preview = conflicts.slice(0, 5).join(', ');
+      const suffix = conflicts.length > 5 ? ` e mais ${conflicts.length - 5}` : '';
+      showToast('error', 'Fichas Duplicadas', `Não foi possível importar: ${preview}${suffix}. Cada localidade possui numeração independente.`);
+      alert(`Erro: Foram encontradas fichas com numeração já cadastrada na mesma localidade:\n${conflicts.slice(0, 20).join('\n')}${conflicts.length > 20 ? `\n...e mais ${conflicts.length - 20}` : ''}\n\nCada localidade possui numeração independente. Corrija os números e tente novamente.`);
+      return;
+    }
+
     const decoratedForms = newForms.map(form => ({
       ...form,
       identification: {
@@ -691,9 +732,23 @@ const App: React.FC = () => {
     setForms(prev => [...finalForms, ...prev]);
     setActiveTab('history');
     await dbSaveFormsBulk(finalForms);
-  }, [user, showToast]);
+  }, [user, showToast, forms]);
 
   const updateForm = useCallback(async (updatedForm: LandingForm) => {
+    const updatedKey = normalizeFormKey(updatedForm.idNumber, updatedForm.identification?.location);
+    if (updatedKey.id) {
+      const duplicateExists = forms.some(f => {
+        if (f.id === updatedForm.id) return false;
+        const existingKey = normalizeFormKey(f.idNumber, f.identification?.location);
+        return existingKey.id === updatedKey.id && existingKey.loc === updatedKey.loc;
+      });
+      if (duplicateExists) {
+        const locLabel = (updatedForm.identification?.location || '').trim() || 'esta localidade';
+        showToast('error', 'Ficha Duplicada', `A ficha nº "${updatedKey.id}" já está cadastrada para a localidade "${locLabel}".`);
+        alert(`Erro: A ficha nº "${updatedKey.id}" já está cadastrada para a localidade "${locLabel}". Cada localidade possui numeração independente. Por favor, verifique o número informado.`);
+        return false;
+      }
+    }
     const decoratedUpdatedForm: LandingForm = {
       ...updatedForm,
       identification: {
@@ -727,7 +782,8 @@ const App: React.FC = () => {
     const finalForm = { ...decoratedUpdatedForm, isOfflinePending };
     setForms(prev => prev.map(f => f.id === finalForm.id ? finalForm : f));
     await dbSaveForm(finalForm);
-  }, [user, showToast]);
+    return true;
+  }, [user, showToast, forms]);
 
   const deleteForm = useCallback(async (id: string) => {
     setForms(prev => prev.filter(f => f.id !== id));

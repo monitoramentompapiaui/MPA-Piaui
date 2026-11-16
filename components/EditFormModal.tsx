@@ -19,7 +19,7 @@ import {
 interface EditFormModalProps {
   editingForm: LandingForm;
   onClose: () => void;
-  onSave: (updatedForm: LandingForm) => void;
+  onSave: (updatedForm: LandingForm) => void | boolean | Promise<void | boolean>;
   fishermen?: Fisherman[];
   speciesList?: Species[];
 }

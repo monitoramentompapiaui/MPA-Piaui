@@ -52,7 +52,7 @@ interface Props {
   forms: LandingForm[];
   onDelete: (id: string) => void;
   onDeleteMultiple: (ids: string[]) => void;
-  onUpdate: (form: LandingForm) => void;
+  onUpdate: (form: LandingForm) => void | boolean | Promise<void | boolean>;
   onClearAll: () => void;
   fishermen: Fisherman[];
   onUpdateFisherman: (fisherman: Fisherman) => void;
@@ -1516,9 +1516,11 @@ const MyFormsList: React.FC<Props> = ({
           fishermen={fishermen}
           speciesList={speciesList}
           onClose={() => setEditingForm(null)}
-          onSave={(cleanForm) => {
-            onUpdate(cleanForm);
-            setEditingForm(null);
+          onSave={async (cleanForm) => {
+            const result = await onUpdate(cleanForm);
+            if (result !== false) {
+              setEditingForm(null);
+            }
           }}
         />
       )}

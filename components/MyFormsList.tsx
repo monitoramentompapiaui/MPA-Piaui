@@ -1466,7 +1466,20 @@ const MyFormsList: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* 5. METADADOS E HISTÓRICO */}
+              {/* 5. OBSERVAÇÃO GERAL DA FICHA */}
+              {viewingForm.identification.observacao && (
+                <div className="bg-amber-50/60 dark:bg-amber-950/10 p-5 rounded-2xl border border-amber-200 dark:border-amber-900/40 space-y-2 font-sans">
+                  <div className="flex items-center gap-2 pb-2 border-b border-amber-200/60 dark:border-amber-900/40 text-slate-800 dark:text-slate-100 font-bold">
+                    <Info size={18} className="text-amber-600 dark:text-amber-400" />
+                    <h3 className="text-xs uppercase tracking-wider">Observação</h3>
+                  </div>
+                  <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-words">
+                    {viewingForm.identification.observacao}
+                  </p>
+                </div>
+              )}
+
+              {/* 6. METADADOS E HISTÓRICO */}
               <div className="text-[10px] text-slate-400 dark:text-slate-500 flex flex-wrap justify-between gap-2 px-2">
                 <p>Criado em: {new Date(viewingForm.createdAt || '').toLocaleString()}</p>
                 <p>Digitado por: {viewingForm.identification.createdByEmail || 'Administrador'} ({viewingForm.identification.createdByUsername || 'admin'})</p>

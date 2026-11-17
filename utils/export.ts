@@ -27,6 +27,7 @@ export const exportToExcel = (data: LandingForm[], filename: string) => {
       'Pescador / Proprietário': form.identification.fishermanName || '-',
       'Nome da Embarcação': form.identification.vesselName || '-',
       'Pesqueiro / Local de Captura': form.identification.fishingGround || '-',
+      'Observação': form.identification.observacao || '-',
 
       // Pescaria
       'Tipo da Embarcação': form.fishing.vesselType || '-',
@@ -135,7 +136,8 @@ export const importFromExcel = (file: File): Promise<LandingForm[]> => {
                 year: parseInt(row['Ano']) || new Date().getFullYear(),
                 month: row['Mes'] || row['Mês'] || '',
                 fishermanName: row['Proprietário'] || row['Proprietario'] || row['Pescador'] || '',
-                vesselName: row['Nome Embarcacao'] || row['Nome Embarcação'] || ''
+                vesselName: row['Nome Embarcacao'] || row['Nome Embarcação'] || '',
+                observacao: row['Observação'] && row['Observação'] !== '-' ? String(row['Observação']) : undefined
               },
               fishing: {
                 vesselType: row['Embarcacao'] || row['Tipo da embarcação'] || '',

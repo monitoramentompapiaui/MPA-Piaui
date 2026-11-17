@@ -13,7 +13,8 @@ import {
   Package, 
   Trash2, 
   Plus, 
-  CheckCircle2 
+  CheckCircle2,
+  FileText
 } from 'lucide-react';
 
 interface EditFormModalProps {
@@ -1008,6 +1009,27 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
               </div>
             </div>
 
+            {/* Observação geral da ficha */}
+            <div className="p-6 rounded-2xl border border-amber-200 bg-amber-50/50 space-y-2">
+              <label htmlFor="edit-observacao" className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                <FileText size={16} className="text-amber-600" /> Observação
+              </label>
+              <p className="text-[11px] text-slate-500">
+                Informações adicionais sobre esta ficha (condições de pesca, detalhes da captura, observações gerais etc.).
+              </p>
+              <textarea
+                id="edit-observacao"
+                rows={4}
+                placeholder="Registre observações sobre a viagem, a captura ou a ficha..."
+                className="w-full p-3 bg-white border border-amber-200 rounded-xl text-xs text-slate-800 outline-none focus:ring-2 focus:ring-amber-500 resize-y shadow-sm"
+                value={editingForm.identification.observacao || ''}
+                onChange={e => setEditingForm(prev => ({
+                  ...prev,
+                  identification: { ...prev.identification, observacao: e.target.value }
+                }))}
+              />
+            </div>
+
           </div>
           
         </div>
@@ -1036,6 +1058,7 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
                   fishermanName: editingForm.identification.fishermanName ? standardizeText(editingForm.identification.fishermanName) : undefined,
                   vesselName: editingForm.identification.vesselName ? standardizeText(editingForm.identification.vesselName) : undefined,
                   period: editingForm.identification.period ? editingForm.identification.period.trim().toLowerCase() : undefined,
+                  observacao: editingForm.identification.observacao?.trim() || undefined,
                 },
                 fishing: {
                   ...editingForm.fishing,

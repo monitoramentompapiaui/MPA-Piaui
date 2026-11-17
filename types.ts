@@ -37,6 +37,7 @@ export interface IdentificationData {
   period?: string; // "Período" (seco / chuvoso)
   numeroGeral?: string; // "Nº Geral" (entrada em lote)
   portoOrigem?: string; // "Porto de origem"
+  observacao?: string; // "Observação" geral da ficha (preenchida após as espécies)
   isManualEntry?: boolean; // Diferencial para identificar cadastros manuais individuais
   createdByEmail?: string;
   createdByUsername?: string;

@@ -62,7 +62,8 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
     location: '',
     year: new Date().getFullYear(),
     month: new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(new Date()),
-    period: ''
+    period: '',
+    observacao: ''
   });
 
   const [fish, setFish] = useState<FishingData>({
@@ -535,6 +536,7 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
           fishingGround: ident.fishingGround ? standardizeText(ident.fishingGround) : undefined,
           fishermanName: ident.fishermanName ? standardizeText(ident.fishermanName) : undefined,
           vesselName: ident.vesselName ? standardizeText(ident.vesselName) : undefined,
+          observacao: ident.observacao?.trim() || undefined,
         },
         fishing: {
           ...fish,
@@ -568,7 +570,8 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
       location: '',
       year: new Date().getFullYear(),
       month: new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(new Date()),
-      period: ''
+      period: '',
+      observacao: ''
     });
     setFish({
       vesselType: '',
@@ -1583,6 +1586,24 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
                 </tfoot>
               )}
             </table>
+          </div>
+
+          {/* OBSERVAÇÃO GERAL DA FICHA */}
+          <div className="bg-amber-50/60 dark:bg-amber-950/10 p-6 rounded-2xl border border-amber-200 dark:border-amber-900/40 space-y-2">
+            <label htmlFor="observacao-input" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+              <FileText size={16} className="text-amber-600 dark:text-amber-400" /> Observação
+            </label>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Registre informações adicionais sobre esta ficha (condições de pesca, detalhes da captura, observações gerais etc.).
+            </p>
+            <textarea
+              id="observacao-input"
+              rows={4}
+              placeholder="Ex.: condições do mar, observações sobre a captura, irregularidades etc."
+              className="w-full p-3 bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-900/50 rounded-xl outline-none focus:ring-2 focus:ring-amber-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm resize-y"
+              value={ident.observacao || ''}
+              onChange={e => setIdent(prev => ({ ...prev, observacao: e.target.value }))}
+            />
           </div>
         </div>
       </div>

@@ -1,7 +1,8 @@
 
 import * as XLSX from 'xlsx';
 import { LandingForm } from '../types';
-import { getGeneralGearType } from './gearUtils';
+import { canonicalizeGearName, getGeneralGearType } from './gearUtils';
+import { normalizeFisherCount } from './dataNormalization';
 import { parseToISODate } from './dateUtils';
 
 const excelDateToJSDate = (serial: any): string => {
@@ -122,6 +123,9 @@ export const importFromExcel = (file: File): Promise<LandingForm[]> => {
           const fichaId = row['Ficha N.']?.toString() || row['Ficha (N °)']?.toString() || `IMPORT-${index}`;
           const collector = row['Coletor'] || 'N/A';
           const arrival = excelDateToJSDate(row['Data Chegada'] || row['Data de Chegada']);
+          const importedGearType = canonicalizeGearName(
+            String(row['Arte de Pesca'] || row['Arte Pesca'] || 'Tarrafa')
+          ) || 'Tarrafa';
           const groupKey = `${fichaId}-${collector}-${arrival}`;
 
           if (!formsMap.has(groupKey)) {
@@ -142,9 +146,9 @@ export const importFromExcel = (file: File): Promise<LandingForm[]> => {
               fishing: {
                 vesselType: row['Embarcacao'] || row['Tipo da embarcação'] || '',
                 propulsionType: '',
-                fisherCount: parseInt(row['Num Pescadores'] || row['N° de pescadores']) || 0,
-                gearType: String(row['Arte Pesca'] || row['Arte de Pesca'] || 'Tarrafa'),
-                gearTypeGeneral: getGeneralGearType(String(row['Arte Pesca'] || row['Arte de Pesca'] || 'Tarrafa')),
+                fisherCount: normalizeFisherCount(row['Num Pescadores'] || row['N° de pescadores'] || row['N° de Pescadores']),
+                gearType: importedGearType,
+                gearTypeGeneral: getGeneralGearType(importedGearType),
                 departureDate: excelDateToJSDate(row['Data Saida'] || row['Data de Saída']),
                 arrivalDate: arrival,
                 fishingDays: parseInt(row['Dias Pescaria'] || row['Dias de Pescaria']) || 0,

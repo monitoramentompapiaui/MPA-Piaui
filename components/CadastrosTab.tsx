@@ -31,6 +31,7 @@ import * as XLSX from 'xlsx';
 import FishermanRegistrationForm from './FishermanRegistrationForm';
 import BulkFishermenImportGrid from './BulkFishermenImportGrid';
 import { standardizeText, standardizeScientificName } from '../utils/textUtils';
+import { normalizeFisherCountText } from '../utils/dataNormalization';
 import { isSupabaseConfigured, uploadSpeciesPhotoToSupabase } from '../utils/supabase';
 import ImageEditorModal from './ImageEditorModal';
 import { getOrGenerateWorldMapImage } from '../utils/mapGenerator';
@@ -1775,7 +1776,7 @@ const CadastrosTab: React.FC<Props> = ({
                                   <p><span className="text-slate-500 dark:text-slate-400">Arte de Pesca:</span> {f.gearType?.trim() ? <span className="font-bold text-slate-800 dark:text-slate-100">{f.gearType}</span> : missingSpan}</p>
                                   <p><span className="text-slate-500 dark:text-slate-400">Categoria Geral:</span> <span className="font-bold text-slate-800 dark:text-slate-100">{f.gearTypeGeneral || 'Não informado (Opcional)'}</span></p>
                                   <p><span className="text-slate-500 dark:text-slate-400">Pesca Submarina:</span> <span className="font-bold text-slate-800 dark:text-slate-100">{f.pescaSubmarina || 'Não informado (Opcional)'}</span></p>
-                                  <p><span className="text-slate-500 dark:text-slate-400">Nº de Pescadores:</span> <span className="font-bold text-slate-800 dark:text-slate-100">{f.fisherCount || 'Não informado (Opcional)'}</span></p>
+                                  <p><span className="text-slate-500 dark:text-slate-400">Nº de Pescadores:</span> <span className="font-bold text-slate-800 dark:text-slate-100">{normalizeFisherCountText(f.fisherCount) || 'Não informado (Opcional)'}</span></p>
                                 </div>
                               </div>
                               <div className="md:col-span-2 p-4 rounded-2xl border bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 transition-all">

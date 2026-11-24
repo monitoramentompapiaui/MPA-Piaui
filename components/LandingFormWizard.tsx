@@ -12,7 +12,8 @@ import { getMoonPhasesForRange } from '../utils/moonPhase';
 import { generateId } from '../utils/uuid';
 import { parsePortugueseNumber, formatNumberPtBR } from '../utils/numberUtils';
 import { standardizeText, standardizeScientificName } from '../utils/textUtils';
-import { GEAR_STRUCTURE, getGeneralGearType, ALL_GENERAL_GEARS, ALL_SPECIFIC_GEARS } from '../utils/gearUtils';
+import { GEAR_STRUCTURE, getGeneralGearType, ALL_GENERAL_GEARS, ALL_SPECIFIC_GEARS, canonicalizeGearName, publicGearDetails } from '../utils/gearUtils';
+import GearDetailsFields from './GearDetailsFields';
 import { 
   User, 
   Ship, 
@@ -259,8 +260,8 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
     if (fisher) {
       setSelectedFishermanId(fisher.id);
       
-      const specific = fisher.gearType || '';
-      const general = fisher.gearTypeGeneral || getGeneralGearType(specific);
+      const specific = canonicalizeGearName(fisher.gearType || '');
+      const general = canonicalizeGearName(fisher.gearTypeGeneral || '') || getGeneralGearType(specific);
       
       const isPredefined = ALL_SPECIFIC_GEARS.includes(specific);
       if (isPredefined) {
@@ -282,7 +283,7 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
         ...prev,
         vesselName: fisher.vesselName || prev.vesselName
       }));
-      setGear(fisher.gearDetails || {});
+      setGear(publicGearDetails(fisher.gearDetails));
     } else {
       setSelectedFishermanId('');
     }
@@ -458,13 +459,7 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
         return;
       }
 
-      // 2. Coletor / Nome do Coletor (obrigatório)
-      if (!ident.collectorName || !ident.collectorName.trim()) {
-        showValidation("Nome do Coletor Obrigatório", "Por favor, preencha o nome do coletor.", "collector-name-input");
-        return;
-      }
-
-      // 3. Porto / Localidade (obrigatório)
+      // 2. Porto / Localidade (obrigatório)
       if (!ident.location || !ident.location.trim()) {
         showValidation("Localidade Obrigatória", "Por favor, selecione ou preencha a localidade/porto de desembarque.", "location-input");
         return;
@@ -531,7 +526,8 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
         createdAt: new Date().toISOString(),
         identification: {
           ...ident,
-          collectorName: standardizeText(ident.collectorName),
+          // O nome do coletor não é mais informado na digitação da ficha.
+          collectorName: '',
           location: standardizeText(ident.location),
           fishingGround: ident.fishingGround ? standardizeText(ident.fishingGround) : undefined,
           fishermanName: ident.fishermanName ? standardizeText(ident.fishermanName) : undefined,
@@ -542,6 +538,8 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
           ...fish,
           vesselType: fish.vesselType ? standardizeText(fish.vesselType) : '',
           propulsionType: fish.propulsionType ? standardizeText(fish.propulsionType) : '',
+          gearType: canonicalizeGearName(fish.gearType),
+          gearTypeGeneral: canonicalizeGearName(fish.gearTypeGeneral),
         },
         gear: gear,
         production: production.map(p => ({
@@ -743,19 +741,6 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
                 <option key={loc} value={loc} className="dark:bg-slate-800">{loc}</option>
               ))}
             </select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">Nome do Coletor</label>
-            <input 
-              id="collector-name-input"
-              type="text" 
-              autoComplete="off"
-              className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm"
-              value={ident.collectorName}
-              onChange={e => setIdent({...ident, collectorName: e.target.value})}
-              placeholder="--"
-            />
           </div>
 
           <div className="space-y-2 relative" id="proprietario-autocomplete-container">
@@ -1106,81 +1091,13 @@ const LandingFormWizard: React.FC<Props> = ({ onSave, onCancel, fishermen = [], 
           <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
             <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Dimensões Detalhadas do Equipamento</h4>
             
-            {fish.gearTypeGeneral === 'Rede de emalhe' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs sm:text-sm font-semibold text-slate-750 dark:text-slate-300">Tamanho da Malha (mm)</label>
-                  <input 
-                    type="text" 
-                    className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm"
-                    value={gear.meshSize || ''}
-                    onChange={e => setGear({...gear, meshSize: e.target.value})}
-                    placeholder="--"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs sm:text-sm font-semibold text-slate-750 dark:text-slate-300">Comprimento da Rede (m)</label>
-                  <input 
-                    type="text" 
-                    className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm"
-                    value={gear.length || ''}
-                    onChange={e => setGear({...gear, length: e.target.value})}
-                    placeholder="--"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs sm:text-sm font-semibold text-slate-750 dark:text-slate-300">Altura da Rede (m)</label>
-                  <input 
-                    type="text" 
-                    className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm"
-                    value={gear.height || ''}
-                    onChange={e => setGear({...gear, height: e.target.value})}
-                    placeholder="--"
-                  />
-                </div>
-              </div>
-            ) : fish.gearTypeGeneral === 'Linha de mão' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs sm:text-sm font-semibold text-slate-755 dark:text-slate-300">Número de Anzóis</label>
-                  <input 
-                    type="text" 
-                    className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm"
-                    value={gear.hookCount || ''}
-                    onChange={e => setGear({...gear, hookCount: e.target.value})}
-                    placeholder="--"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs sm:text-sm font-semibold text-slate-755 dark:text-slate-300" htmlFor="comprimento-cabo-linear">Comprimento do Cabo (m)</label>
-                  <input 
-                    id="comprimento-cabo-linear"
-                    type="text" 
-                    className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm"
-                    value={gear.length || ''}
-                    onChange={e => setGear({...gear, length: e.target.value})}
-                    placeholder="--"
-                  />
-                </div>
-              </div>
-            ) : fish.gearTypeGeneral === 'Armadilha' ? (
-              <div className="grid grid-cols-1 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs sm:text-sm font-semibold text-slate-760 dark:text-slate-300">Número de Armadilhas/Covo</label>
-                  <input 
-                    type="text" 
-                    className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none max-w-md font-bold text-slate-800 dark:text-slate-100 text-xs md:text-sm shadow-sm"
-                    value={gear.trapCount || ''}
-                    onChange={e => setGear({...gear, trapCount: e.target.value})}
-                    placeholder="--"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="py-6 text-center text-slate-400 dark:text-slate-500 font-medium text-xs sm:text-sm bg-slate-50 dark:bg-slate-950 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
-                Sem especificações de dimensões adicionais necessárias para a categoria: <strong className="text-slate-650 dark:text-slate-400 font-bold">{fish.gearTypeGeneral || 'Outros'}</strong>
-              </div>
-            )}
+            <GearDetailsFields
+              general={fish.gearTypeGeneral || ''}
+              specific={fish.gearType}
+              details={gear}
+              onChange={setGear}
+              idPrefix="wizard-gear"
+            />
           </div>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { LandingForm, Fisherman, Species, ProductionItem } from '../types';
 import { safeFormatDate, parseToISODate } from '../utils/dateUtils';
 import { parsePortugueseNumber, formatNumberPtBR } from '../utils/numberUtils';
 import { standardizeText, standardizeScientificName } from '../utils/textUtils';
+import { normalizeFisherCount, normalizeFisherCountText } from '../utils/dataNormalization';
 import { GEAR_STRUCTURE, getGeneralGearType, ALL_GENERAL_GEARS, ALL_SPECIFIC_GEARS } from '../utils/gearUtils';
 import { 
   Trash2, 
@@ -68,7 +69,6 @@ const isFormIncomplete = (form: LandingForm): boolean => {
   // 1. Identificação Básica
   if (!form.idNumber || form.idNumber.trim() === '') return true;
   if (!form.identification?.fishermanName || form.identification.fishermanName.trim() === '') return true;
-  if (!form.identification?.collectorName || form.identification.collectorName.trim() === '') return true;
   if (!form.identification?.location || form.identification.location.trim() === '') return true;
   if (!form.identification?.month || form.identification.month.trim() === '') return true;
   if (!form.identification?.year) return true;
@@ -77,7 +77,7 @@ const isFormIncomplete = (form: LandingForm): boolean => {
   if (!form.fishing?.gearType || form.fishing.gearType.trim() === '') return true;
   if (!form.fishing?.departureDate || form.fishing.departureDate.trim() === '') return true;
   if (!form.fishing?.arrivalDate || form.fishing.arrivalDate.trim() === '') return true;
-  if (!form.fishing?.fisherCount || form.fishing.fisherCount <= 0) return true;
+  if (normalizeFisherCount(form.fishing?.fisherCount) <= 0) return true;
   if (!form.fishing?.fishingDays || form.fishing.fishingDays <= 0) return true;
 
   // 3. Produção/Espécies
@@ -244,7 +244,7 @@ const FormItem = memo(({
                       <p><span className="text-slate-500 dark:text-slate-400">Arte de pesca:</span> {form.fishing.gearType?.trim() ? <span className="font-bold text-slate-700 dark:text-slate-200">{form.fishing.gearType}</span> : missingSpan}</p>
                       <p><span className="text-slate-500 dark:text-slate-400">Data de Saída:</span> {form.fishing.departureDate?.trim() ? <span className="font-bold text-slate-700 dark:text-slate-200">{form.fishing.departureDate}</span> : missingSpan}</p>
                       <p><span className="text-slate-500 dark:text-slate-400">Data de Chegada:</span> {form.fishing.arrivalDate?.trim() ? <span className="font-bold text-slate-700 dark:text-slate-200">{form.fishing.arrivalDate}</span> : missingSpan}</p>
-                      <p><span className="text-slate-500 dark:text-slate-400">Qtd. de Pescadores:</span> {form.fishing.fisherCount && form.fishing.fisherCount > 0 ? <span className="font-bold text-slate-700 dark:text-slate-200">{form.fishing.fisherCount} pax</span> : missingSpan}</p>
+                      <p><span className="text-slate-500 dark:text-slate-400">Qtd. de Pescadores:</span> {normalizeFisherCountText(form.fishing.fisherCount) ? <span className="font-bold text-slate-700 dark:text-slate-200">{normalizeFisherCountText(form.fishing.fisherCount)}</span> : missingSpan}</p>
                       <p><span className="text-slate-500 dark:text-slate-400">Dias de Pesca:</span> {form.fishing.fishingDays && form.fishing.fishingDays > 0 ? <span className="font-bold text-slate-700 dark:text-slate-200">{form.fishing.fishingDays} d</span> : missingSpan}</p>
                       <p><span className="text-slate-500 dark:text-slate-400">Período:</span> {form.identification.period ? <span className="font-bold text-indigo-700 dark:text-indigo-400 capitalize">{form.identification.period}</span> : <span className="font-medium text-slate-400 dark:text-slate-500">Não informado (Opcional)</span>}</p>
                       <p><span className="text-slate-500 dark:text-slate-400">Pesqueiro:</span> <span className="font-bold text-slate-800 dark:text-slate-200">{form.identification.fishingGround || 'Não informado (Opcional)'}</span></p>
@@ -1361,7 +1361,7 @@ const MyFormsList: React.FC<Props> = ({
                     </div>
                     <div>
                       <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500">Qtd. Pescadores</p>
-                      <p className="font-semibold text-slate-800 dark:text-slate-200">{viewingForm.fishing.fisherCount ? `${viewingForm.fishing.fisherCount} pax` : '---'}</p>
+                      <p className="font-semibold text-slate-800 dark:text-slate-200">{normalizeFisherCountText(viewingForm.fishing.fisherCount) || '---'}</p>
                     </div>
                     <div>
                       <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500">Dias de Pesca</p>
@@ -1381,9 +1381,9 @@ const MyFormsList: React.FC<Props> = ({
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
                     {Object.entries(viewingForm.gear).map(([key, value]) => {
-                      if (value === undefined || value === null || value === '') return null;
+                      if (key.startsWith('_') || value === undefined || value === null || value === '') return null;
                       
-                      // Traduz as chaves para rótulos legíveis
+                      // Traduz as chaves para rótulos legíveis (inclui todas as artes)
                       const labels: Record<string, string> = {
                         meshSize: 'Tamanho da Malha (mm)',
                         meshSizeInches: 'Tamanho da Malha (Pol.)',
@@ -1393,6 +1393,13 @@ const MyFormsList: React.FC<Props> = ({
                         hookSize: 'Tamanho do Anzol',
                         lineType: 'Tipo de Linha',
                         trapCount: 'Quantidade de Armadilhas/Manjais',
+                        jequiBleedingMesh: 'Malha de Sangra (cm)',
+                        netLength: 'Comprimento da Rede (m)',
+                        mouthHeight: 'Altura da Boca da Rede (m)',
+                        trawlMeshSize: 'Tamanho da Malha (mm)',
+                        covos: 'Nº de Covos',
+                        manzuas: 'Nº de Manzuás',
+                        cataManual: 'Cata Manual',
                         numLeds: 'Quantidade de LEDs',
                         collectType: 'Tipo de Coleta'
                       };

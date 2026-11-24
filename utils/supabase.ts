@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { LandingForm, Fisherman, GearDetails, Species } from '../types';
 import { getGeneralGearType } from './gearUtils';
+import { normalizeFishermen, normalizeForm } from './dataNormalization';
 
 // Retrieve credentials safely from Vite env
 const rawUrl = import.meta.env.VITE_SUPABASE_URL || '';
@@ -63,7 +64,7 @@ const withSyncMarker = (identification: any): any => ({
 
 import { dbGet, dbSet, dbRemove, dbGetAllForms, dbSaveFormsBulk, dbClearAllForms, dbDeleteFormsBulk } from './db';
 
-const mapRowToForm = (row: any): LandingForm => ({
+const mapRowToForm = (row: any): LandingForm => normalizeForm({
   id: row.id,
   idNumber: row.id_number,
   createdAt: row.created_at,
@@ -563,7 +564,7 @@ export const getSupabaseFishermen = async (): Promise<Fisherman[]> => {
     });
 
     // Extremely fast client-side sorting in memory solves Supabase Filesort statement timeout completely!
-    return mapped.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt'));
+    return normalizeFishermen(mapped).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt'));
   } catch (err) {
     console.warn('Aviso: Falha de conexão com o Supabase ao buscar pescadores:', err);
     throw err;

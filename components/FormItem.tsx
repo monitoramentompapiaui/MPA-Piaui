@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { LandingForm } from '../types';
 import { safeFormatDate } from '../utils/dateUtils';
 import { formatNumberPtBR } from '../utils/numberUtils';
+import { normalizeFisherCount, normalizeFisherCountText } from '../utils/dataNormalization';
 import { 
   Trash2, 
   ChevronDown, 
@@ -20,7 +21,6 @@ export const isFormIncomplete = (form: LandingForm): boolean => {
   // 1. Identificação Básica
   if (!form.idNumber || form.idNumber.trim() === '') return true;
   if (!form.identification?.fishermanName || form.identification.fishermanName.trim() === '') return true;
-  if (!form.identification?.collectorName || form.identification.collectorName.trim() === '') return true;
   if (!form.identification?.location || form.identification.location.trim() === '') return true;
   if (!form.identification?.month || form.identification.month.trim() === '') return true;
   if (!form.identification?.year) return true;
@@ -29,7 +29,7 @@ export const isFormIncomplete = (form: LandingForm): boolean => {
   if (!form.fishing?.gearType || form.fishing.gearType.trim() === '') return true;
   if (!form.fishing?.departureDate || form.fishing.departureDate.trim() === '') return true;
   if (!form.fishing?.arrivalDate || form.fishing.arrivalDate.trim() === '') return true;
-  if (!form.fishing?.fisherCount || form.fishing.fisherCount <= 0) return true;
+  if (normalizeFisherCount(form.fishing?.fisherCount) <= 0) return true;
   if (!form.fishing?.fishingDays || form.fishing.fishingDays <= 0) return true;
 
   // 3. Produção/Espécies
@@ -197,7 +197,7 @@ const FormItem: React.FC<FormItemProps> = ({
                       <p><span className="text-slate-500 dark:text-slate-400">Arte de pesca:</span> {form.fishing.gearType?.trim() ? <span className="font-bold text-slate-700 dark:text-slate-200">{form.fishing.gearType}</span> : missingSpan}</p>
                       <p><span className="text-slate-500 dark:text-slate-400">Data de Saída:</span> {form.fishing.departureDate?.trim() ? <span className="font-bold text-slate-700 dark:text-slate-200">{form.fishing.departureDate}</span> : missingSpan}</p>
                       <p><span className="text-slate-500 dark:text-slate-400">Data de Chegada:</span> {form.fishing.arrivalDate?.trim() ? <span className="font-bold text-slate-700 dark:text-slate-200">{form.fishing.arrivalDate}</span> : missingSpan}</p>
-                      <p><span className="text-slate-500 dark:text-slate-400">Qtd. de Pescadores:</span> {form.fishing.fisherCount && form.fishing.fisherCount > 0 ? <span className="font-bold text-slate-700 dark:text-slate-200">{form.fishing.fisherCount} pax</span> : missingSpan}</p>
+                      <p><span className="text-slate-500 dark:text-slate-400">Qtd. de Pescadores:</span> {normalizeFisherCountText(form.fishing.fisherCount) ? <span className="font-bold text-slate-700 dark:text-slate-200">{normalizeFisherCountText(form.fishing.fisherCount)}</span> : missingSpan}</p>
                       <p><span className="text-slate-500 dark:text-slate-400">Dias de Pesca:</span> {form.fishing.fishingDays && form.fishing.fishingDays > 0 ? <span className="font-bold text-slate-700 dark:text-slate-200">{form.fishing.fishingDays} d</span> : missingSpan}</p>
                       <p><span className="text-slate-500 dark:text-slate-400">Período:</span> {form.identification.period ? <span className="font-bold text-indigo-700 dark:text-indigo-400 capitalize">{form.identification.period}</span> : <span className="font-medium text-slate-400 dark:text-slate-500">Não informado (Opcional)</span>}</p>
                       <p><span className="text-slate-500 dark:text-slate-400">Pesqueiro:</span> <span className="font-bold text-slate-800 dark:text-slate-200">{form.identification.fishingGround || 'Não informado (Opcional)'}</span></p>

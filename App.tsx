@@ -31,6 +31,8 @@ import {
   Fish
 } from 'lucide-react';
 import { LandingForm, Fisherman, Species } from './types';
+import { normalizeForm, normalizeForms, normalizeFishermen } from './utils/dataNormalization';
+import { applyFishermanToForm, fishermanMatchesForm } from './utils/fishermanSync';
 import LoginForm from './components/LoginForm';
 import { exportToExcel } from './utils/export';
 
@@ -233,7 +235,7 @@ const App: React.FC = () => {
             const dateB = new Date(b.createdAt || 0).getTime();
             return dateB - dateA;
           });
-          setForms(cachedForms);
+          setForms(normalizeForms(cachedForms));
 
           const hasPending = cachedForms.some(f => f.isOfflinePending);
           if (hasPending) {
@@ -261,7 +263,7 @@ const App: React.FC = () => {
           }
         }
         if (cachedFishermen && Array.isArray(cachedFishermen)) {
-          setFishermen(cachedFishermen);
+          setFishermen(normalizeFishermen(cachedFishermen));
         }
 
         // Carrega espécies
@@ -513,8 +515,8 @@ const App: React.FC = () => {
         cloudSpecies = await dbGet<Species[]>('fishery_species') || [];
       }
 
-      setForms(cloudForms);
-      setFishermen(cloudFishermen);
+      setForms(normalizeForms(cloudForms));
+      setFishermen(normalizeFishermen(cloudFishermen));
 
       if (cloudSpecies && cloudSpecies.length >= INITIAL_SPECIES_LIST.length) {
         setSpeciesList(cloudSpecies);
@@ -633,10 +635,11 @@ const App: React.FC = () => {
       }
     }
 
+    const cleanForm = normalizeForm(newForm);
     const decoratedForm: LandingForm = {
-      ...newForm,
+      ...cleanForm,
       identification: {
-        ...newForm.identification,
+        ...cleanForm.identification,
         isManualEntry: true, // Indica que é um cadastro manual inserido individualmente a partir de agora
         createdByEmail: newForm.identification?.createdByEmail || user?.email || undefined,
         createdByUsername: newForm.identification?.createdByUsername || (user?.email ? user.email.split('@')[0] : 'Administrador')
@@ -699,7 +702,7 @@ const App: React.FC = () => {
       return;
     }
 
-    const decoratedForms = newForms.map(form => ({
+    const decoratedForms = normalizeForms(newForms).map(form => ({
       ...form,
       identification: {
         ...form.identification,
@@ -749,10 +752,11 @@ const App: React.FC = () => {
         return false;
       }
     }
+    const cleanUpdatedForm = normalizeForm(updatedForm);
     const decoratedUpdatedForm: LandingForm = {
-      ...updatedForm,
+      ...cleanUpdatedForm,
       identification: {
-        ...updatedForm.identification,
+        ...cleanUpdatedForm.identification,
         isManualEntry: updatedForm.identification?.isManualEntry !== undefined 
           ? updatedForm.identification.isManualEntry 
           : true, // Preserva se já definido, senão considera manual
@@ -858,20 +862,52 @@ const App: React.FC = () => {
   }, [isSupabaseConfigured, showToast]);
 
   const updateFisherman = useCallback(async (updatedFisher: Fisherman) => {
-    setFishermen(prev => prev.map(f => f.id === updatedFisher.id ? updatedFisher : f));
+    const cleanFisher = normalizeFishermen([updatedFisher])[0];
+    // Usa os dados anteriores para localizar fichas mesmo quando o nome/localidade mudou.
+    const previousFisher = fishermen.find(f => f.id === cleanFisher.id) || cleanFisher;
+
+    setFishermen(prev => prev.map(f => f.id === cleanFisher.id ? cleanFisher : f));
 
     if (isSupabaseConfigured) {
       try {
         setIsSyncing(true);
         setSyncError(null);
-        await updateSupabaseFisherman(updatedFisher);
+        await updateSupabaseFisherman(cleanFisher);
       } catch (err: any) {
         setSyncError("Pescador atualizado apenas localmente (erro Supabase).");
       } finally {
         setIsSyncing(false);
       }
     }
-  }, []);
+
+    // Replica as informações cadastrais nas fichas já digitadas daquele pescador.
+    const affectedForms = forms.filter(f => fishermanMatchesForm(f, previousFisher));
+    if (affectedForms.length === 0) return;
+
+    const candidateForms = affectedForms.map(f => normalizeForm(applyFishermanToForm(f, cleanFisher)));
+    let formsToCommit = candidateForms;
+
+    if (isSupabaseConfigured) {
+      const results = await Promise.allSettled(candidateForms.map(f => updateSupabaseForm(f)));
+      const succeededIds = new Set(
+        candidateForms.filter((_, index) => results[index].status === 'fulfilled').map(f => f.id)
+      );
+      formsToCommit = candidateForms.filter(f => succeededIds.has(f.id));
+      if (formsToCommit.length < candidateForms.length) {
+        setSyncError('Algumas fichas do pescador não foram sincronizadas e mantiveram os dados anteriores.');
+      }
+    }
+
+    if (formsToCommit.length > 0) {
+      setForms(prev => prev.map(f => formsToCommit.find(u => u.id === f.id) || f));
+      await dbSaveFormsBulk(formsToCommit);
+      showToast(
+        formsToCommit.length === candidateForms.length ? 'success' : 'warning',
+        'Fichas Atualizadas',
+        `As alterações do pescador foram aplicadas em ${formsToCommit.length} ficha(s) já digitada(s).`
+      );
+    }
+  }, [fishermen, forms, isSupabaseConfigured, showToast]);
 
   const deleteFisherman = useCallback(async (id: string) => {
     setFishermen(prev => prev.filter(f => f.id !== id));
@@ -1106,8 +1142,8 @@ const App: React.FC = () => {
       });
       const cloudFishermen = await getSupabaseFishermen();
       const cloudSpecies = await getSupabaseSpecies();
-      setForms(cloudForms);
-      setFishermen(cloudFishermen);
+      setForms(normalizeForms(cloudForms));
+      setFishermen(normalizeFishermen(cloudFishermen));
       if (cloudSpecies && cloudSpecies.length > 0) {
         setSpeciesList(cloudSpecies);
       }

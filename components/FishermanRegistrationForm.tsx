@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Fisherman, GearDetails } from '../types';
 import { generateId } from '../utils/uuid';
 import { standardizeText } from '../utils/textUtils';
-import { GEAR_STRUCTURE, getGeneralGearType, ALL_GENERAL_GEARS, ALL_SPECIFIC_GEARS } from '../utils/gearUtils';
+import { GEAR_STRUCTURE, getGeneralGearType, ALL_GENERAL_GEARS, ALL_SPECIFIC_GEARS, canonicalizeGearName, publicGearDetails } from '../utils/gearUtils';
+import GearDetailsFields from './GearDetailsFields';
 import { 
   User, 
   MapPin, 
@@ -40,8 +41,8 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
       setLocation(editingFisherman.location);
       setVesselName(editingFisherman.vesselName || '');
       
-      const specific = editingFisherman.gearType;
-      const general = editingFisherman.gearTypeGeneral || getGeneralGearType(specific);
+      const specific = canonicalizeGearName(editingFisherman.gearType);
+      const general = canonicalizeGearName(editingFisherman.gearTypeGeneral || '') || getGeneralGearType(specific);
       
       setGearType(specific);
       setGearTypeGeneral(general);
@@ -55,7 +56,7 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
         setCustomSpecificText(specific);
       }
       
-      setGearDetails(editingFisherman.gearDetails || {});
+      setGearDetails(publicGearDetails(editingFisherman.gearDetails));
     } else {
       // Reset form
       setName('');
@@ -70,17 +71,16 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
   }, [editingFisherman]);
 
   const handleSpecificGearSelect = (value: string) => {
+    // As medidas já digitadas são preservadas quando a arte é alterada.
     if (value === 'custom') {
       setIsCustomSpecific(true);
       setGearType('');
       setGearTypeGeneral('Outros');
-      setGearDetails({});
     } else {
+      const specific = canonicalizeGearName(value);
       setIsCustomSpecific(false);
-      setGearType(value);
-      const general = getGeneralGearType(value);
-      setGearTypeGeneral(general);
-      setGearDetails({});
+      setGearType(specific);
+      setGearTypeGeneral(getGeneralGearType(specific));
     }
   };
 
@@ -99,7 +99,7 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
       return;
     }
 
-    const finalGearType = isCustomSpecific ? customSpecificText.trim() : gearType;
+    const finalGearType = canonicalizeGearName(isCustomSpecific ? customSpecificText.trim() : gearType);
     if (!finalGearType) {
       alert('Por favor, especifique a arte de pesca.');
       return;
@@ -108,15 +108,18 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
     setIsSaving(true);
 
     const savedFisherman: Fisherman = {
+      // Mantém campos que não aparecem neste formulário (porto de origem, nº de pescadores,
+      // pesca submarina, tipo de embarcação etc.) quando se edita um cadastro existente.
+      ...(editingFisherman || {}),
       id: editingFisherman ? editingFisherman.id : generateId(),
       name: standardizeText(name),
       location: standardizeText(location),
-      vesselType: '',
+      vesselType: editingFisherman?.vesselType || '',
       vesselName: vesselName.trim() ? standardizeText(vesselName) : undefined,
-      propulsionType: '',
+      propulsionType: editingFisherman?.propulsionType || '',
       gearType: finalGearType,
-      gearTypeGeneral,
-      gearDetails
+      gearTypeGeneral: canonicalizeGearName(gearTypeGeneral) || getGeneralGearType(finalGearType),
+      gearDetails: publicGearDetails(gearDetails)
     };
 
     onSave(savedFisherman);
@@ -267,169 +270,16 @@ const FishermanRegistrationForm: React.FC<Props> = ({ onSave, onCancel, editingF
               </div>
             </div>
 
-            {/* Dynamic gear specs inputs as requested */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 bg-white dark:bg-slate-900 p-3 sm:p-5 rounded-xl border border-slate-150 dark:border-slate-800">
-              {gearType.toLowerCase() === 'tarrafa' ? (
-                <>
-                  <div className="space-y-1.5 sm:space-y-2">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Comprimento (m)</label>
-                    <input 
-                      type="text" 
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
-                      value={gearDetails.length || ''}
-                      onChange={e => setGearDetails({...gearDetails, length: e.target.value})}
-                      placeholder="--"
-                    />
-                  </div>
-                  <div className="space-y-1.5 sm:space-y-2">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Tamanho da Malha (cm)</label>
-                    <input 
-                      type="text" 
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
-                      value={gearDetails.meshSize || ''}
-                      onChange={e => setGearDetails({...gearDetails, meshSize: e.target.value})}
-                      placeholder="--"
-                    />
-                  </div>
-                </>
-              ) : gearType.toLowerCase() === 'jequi' ? (
-                <>
-                  <div className="space-y-1.5 sm:space-y-2">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Número de Armadilhas/Jequis</label>
-                    <input 
-                      type="text" 
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
-                      value={gearDetails.trapCount || ''}
-                      onChange={e => setGearDetails({...gearDetails, trapCount: e.target.value})}
-                      placeholder="--"
-                    />
-                  </div>
-                  <div className="space-y-1.5 sm:space-y-2">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Malha de Sangra (cm)</label>
-                    <input 
-                      type="text" 
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
-                      value={gearDetails.jequiBleedingMesh || ''}
-                      onChange={e => setGearDetails({...gearDetails, jequiBleedingMesh: e.target.value})}
-                      placeholder="--"
-                    />
-                  </div>
-                </>
-              ) : gearTypeGeneral === 'Rede de emalhe' ? (
-                <>
-                  <div className="space-y-1.5 sm:space-y-2">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Tamanho da Malha (mm)</label>
-                    <input 
-                      type="text" 
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
-                      value={gearDetails.meshSize || ''}
-                      onChange={e => setGearDetails({...gearDetails, meshSize: e.target.value})}
-                      placeholder="--"
-                    />
-                  </div>
-                  <div className="space-y-1.5 sm:space-y-2">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Comprimento da Rede (m)</label>
-                    <input 
-                      type="text" 
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
-                      value={gearDetails.length || ''}
-                      onChange={e => setGearDetails({...gearDetails, length: e.target.value})}
-                      placeholder="--"
-                    />
-                  </div>
-                  <div className="space-y-1.5 sm:space-y-2 md:col-span-2">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Altura (m)</label>
-                    <input 
-                      type="text" 
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
-                      value={gearDetails.height || ''}
-                      onChange={e => setGearDetails({...gearDetails, height: e.target.value})}
-                      placeholder="--"
-                    />
-                  </div>
-                </>
-              ) : gearTypeGeneral === 'Linha de mão' ? (
-                <>
-                  <div className="space-y-1.5 sm:space-y-2">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Número de Anzóis</label>
-                    <input 
-                      type="text" 
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
-                      value={gearDetails.hookCount || ''}
-                      onChange={e => setGearDetails({...gearDetails, hookCount: e.target.value})}
-                      placeholder="--"
-                    />
-                  </div>
-                  <div className="space-y-1.5 sm:space-y-2">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Comprimento do Cabo (m)</label>
-                    <input 
-                      type="text" 
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
-                      value={gearDetails.length || ''}
-                      onChange={e => setGearDetails({...gearDetails, length: e.target.value})}
-                      placeholder="--"
-                    />
-                  </div>
-                  <div className="space-y-1.5 sm:space-y-2 md:col-span-2">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Tamanho do Anzol</label>
-                    <input 
-                      type="text" 
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
-                      value={gearDetails.hookSize || ''}
-                      onChange={e => setGearDetails({...gearDetails, hookSize: e.target.value})}
-                      placeholder="Ex: 4/0, 12, etc."
-                    />
-                  </div>
-                </>
-              ) : gearTypeGeneral === 'Armadilha' ? (
-                <div className="space-y-1.5 sm:space-y-2 col-span-1 md:col-span-2">
-                  <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Número de Armadilhas/Covo</label>
-                  <input 
-                    type="text" 
-                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
-                    value={gearDetails.trapCount || ''}
-                    onChange={e => setGearDetails({...gearDetails, trapCount: e.target.value})}
-                    placeholder="--"
-                  />
-                </div>
-              ) : (gearTypeGeneral === 'Arrasto de fundo' || gearType.toLowerCase() === 'arrasto de fundo') ? (
-                <>
-                  <div className="space-y-1.5 sm:space-y-2">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Comprimento da Rede (m)</label>
-                    <input 
-                      type="text" 
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
-                      value={gearDetails.netLength || ''}
-                      onChange={e => setGearDetails({...gearDetails, netLength: e.target.value})}
-                      placeholder="--"
-                    />
-                  </div>
-                  <div className="space-y-1.5 sm:space-y-2">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Altura da Boca da Rede (m)</label>
-                    <input 
-                      type="text" 
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
-                      value={gearDetails.mouthHeight || ''}
-                      onChange={e => setGearDetails({...gearDetails, mouthHeight: e.target.value})}
-                      placeholder="--"
-                    />
-                  </div>
-                  <div className="space-y-1.5 sm:space-y-2 md:col-span-2">
-                    <label className="text-[10px] sm:text-xs font-bold text-slate-600 dark:text-slate-400 block text-left leading-[16px]">Tamanho da Malha (mm)</label>
-                    <input 
-                      type="text" 
-                      className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 text-xs md:text-sm"
-                      value={gearDetails.trawlMeshSize || ''}
-                      onChange={e => setGearDetails({...gearDetails, trawlMeshSize: e.target.value})}
-                      placeholder="--"
-                    />
-                  </div>
-                </>
-              ) : (
-                <div className="col-span-1 md:col-span-2 py-4 text-center text-slate-400 dark:text-slate-500 text-xs font-medium">
-                  Sem especificações de dimensões adicionais necessárias para a categoria: <strong className="text-slate-600 dark:text-slate-350">{gearTypeGeneral}</strong>
-                </div>
-              )}
+            {/* Especificações da arte (mesmas categorias usadas nas fichas) */}
+            <div className="bg-white dark:bg-slate-900 p-3 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-800">
+              <GearDetailsFields
+                general={gearTypeGeneral}
+                specific={gearType}
+                details={gearDetails}
+                onChange={setGearDetails}
+                compact
+                idPrefix="fisher-gear"
+              />
             </div>
           </div>
         </div>

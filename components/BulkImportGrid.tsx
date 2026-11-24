@@ -1,7 +1,8 @@
 
 import React, { useState, useCallback, memo, useRef, useEffect } from 'react';
 import { LandingForm, Species, Fisherman } from '../types';
-import { getGeneralGearType } from '../utils/gearUtils';
+import { canonicalizeGearName, getGeneralGearType } from '../utils/gearUtils';
+import { normalizeFisherCount } from '../utils/dataNormalization';
 import { getMoonPhase, getMoonPhasesForRange } from '../utils/moonPhase';
 import { generateId } from '../utils/uuid';
 import { parseToISODate } from '../utils/dateUtils';
@@ -38,7 +39,6 @@ interface GridRow {
   idNumber: string;
   digitador: string;
   location: string;
-  collectorName: string;
   year: string;
   month: string;
   departureDate: string;
@@ -87,12 +87,14 @@ interface GridRow {
   revenue: string;
 }
 
-const FIELDS: (keyof GridRow)[] = [
+// Apenas colunas editáveis como texto (id e selected são internos).
+type GridTextField = Exclude<keyof GridRow, 'id' | 'selected'>;
+
+const FIELDS: GridTextField[] = [
   'numeroGeral',
   'idNumber',
   'digitador',
   'location',
-  'collectorName',
   'year',
   'month',
   'departureDate',
@@ -146,7 +148,6 @@ const FIELD_TRANSLATIONS: Record<string, string> = {
   idNumber: 'Ficha (Nº)',
   digitador: 'Digitador',
   location: 'Local',
-  collectorName: 'Coletor',
   year: 'Ano',
   month: 'Mês',
   departureDate: 'Data de Saída',
@@ -472,7 +473,6 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
       idNumber: '', 
       digitador: '',
       location: '', 
-      collectorName: '', 
       year: '', 
       month: '', 
       departureDate: '', 
@@ -552,7 +552,7 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
       setRows(prevRows => {
         const nextRows = [...prevRows];
         const { rowIndex: startRow, field: startField } = focusedCell;
-        const startFieldIndex = FIELDS.indexOf(startField);
+        const startFieldIndex = FIELDS.indexOf(startField as GridTextField);
 
         // Garante que a grade tenha espaço suficiente para todas as linhas coladas
         const totalRowsNeeded = startRow + lines.length;
@@ -589,9 +589,9 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
   const handleFinalize = async () => {
     const validRows = rows
       .map((row, index) => ({ row, index }))
-      .filter(({ row }) => row.collectorName.trim() && row.species.trim() && row.weight.trim());
+      .filter(({ row }) => row.species.trim() && row.weight.trim());
     if (validRows.length === 0) {
-      alert("Erro: Preencha pelo menos Coletor, Espécie e Peso.");
+      alert("Erro: Preencha pelo menos Espécie e Peso.");
       return;
     }
 
@@ -739,6 +739,9 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
         // Nº Geral: preenche automaticamente com o número da linha na planilha se vazio
         const numeroGeral = row.numeroGeral.trim() !== '' ? row.numeroGeral.trim() : String(rowIndex + 1);
 
+        // Nomes de arte antigos/incorretos são gravados já no formato canônico
+        const gearType = canonicalizeGearName(row.gearType) || 'Tarrafa';
+
         return {
           id: generateId(),
           idNumber: row.idNumber ? row.idNumber.trim() : undefined,
@@ -746,7 +749,8 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
           isBulkImport: true,
           identification: { 
             numeroGeral,
-            collectorName: standardizeText(row.collectorName), 
+            // O nome do coletor não é informado na digitação das fichas.
+            collectorName: '',
             location: standardizeText(row.location), 
             fishingGround: row.fishingGround ? standardizeText(row.fishingGround) : undefined, 
             year: calculatedYear, 
@@ -760,9 +764,10 @@ const BulkImportGrid: React.FC<Props> = ({ onSave, onCancel, speciesList, fisher
           fishing: { 
             vesselType: row.vesselType ? standardizeText(row.vesselType) : '', 
             propulsionType: '', 
-            fisherCount: parseInt(fisherCountVal, 10) || 1, 
-            gearType: row.gearType ? standardizeText(row.gearType) : 'Tarrafa', 
-            gearTypeGeneral: getGeneralGearType(row.gearType || 'Tarrafa'), 
+            // remove sufixos antigos como "2pax" antes de gravar
+            fisherCount: normalizeFisherCount(fisherCountVal) || 1,
+            gearType,
+            gearTypeGeneral: getGeneralGearType(gearType),
             departureDate: isoDeparture, 
             arrivalDate: isoArrival, 
             fishingDays: fishingDays, 

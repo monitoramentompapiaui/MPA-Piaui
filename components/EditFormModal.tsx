@@ -3,7 +3,9 @@ import { LandingForm, ProductionItem, Species, Fisherman } from '../types';
 import { parseToISODate } from '../utils/dateUtils';
 import { parsePortugueseNumber } from '../utils/numberUtils';
 import { standardizeText, standardizeScientificName } from '../utils/textUtils';
-import { GEAR_STRUCTURE, getGeneralGearType, ALL_GENERAL_GEARS, ALL_SPECIFIC_GEARS } from '../utils/gearUtils';
+import { GEAR_STRUCTURE, getGeneralGearType, ALL_GENERAL_GEARS, ALL_SPECIFIC_GEARS, canonicalizeGearName, publicGearDetails } from '../utils/gearUtils';
+import { normalizeForm, normalizeFisherCount } from '../utils/dataNormalization';
+import GearDetailsFields from './GearDetailsFields';
 import { getMoonPhasesForRange } from '../utils/moonPhase';
 import { 
   X, 
@@ -53,7 +55,7 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
   fishermen = [],
   speciesList = []
 }) => {
-  const [editingForm, setEditingForm] = useState<LandingForm>({ ...initialForm });
+  const [editingForm, setEditingForm] = useState<LandingForm>(() => normalizeForm({ ...initialForm }));
   const [newEditSpecies, setNewEditSpecies] = useState({ species: '', scientificName: '', weight: '', price: '' });
   const [showFishermanSuggestions, setShowFishermanSuggestions] = useState(false);
   const [showNewSpeciesSuggestions, setShowNewSpeciesSuggestions] = useState(false);
@@ -117,8 +119,9 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
   }, [speciesList, editingForm.production, editingSpeciesIndex]);
 
   const applyFisherman = (fisherman: Fisherman) => {
-    const specific = fisherman.gearType || '';
-    const general = fisherman.gearTypeGeneral || getGeneralGearType(specific);
+    const specific = canonicalizeGearName(fisherman.gearType || '');
+    const general = canonicalizeGearName(fisherman.gearTypeGeneral || '') || getGeneralGearType(specific);
+    const details = publicGearDetails(fisherman.gearDetails);
 
     setEditingForm(prev => ({
       ...prev,
@@ -135,7 +138,8 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
         vesselType: fisherman.vesselType || prev.fishing.vesselType,
         propulsionType: fisherman.propulsionType || prev.fishing.propulsionType
       },
-      gear: fisherman.gearDetails || {}
+      // Não apaga as medidas já digitadas na ficha quando o cadastro não informa detalhes.
+      gear: Object.keys(details).length > 0 ? { ...prev.gear, ...details } : prev.gear
     }));
     setShowFishermanSuggestions(false);
   };
@@ -163,7 +167,6 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
   };
 
   const isIdNumEmpty = !editingForm.idNumber || editingForm.idNumber.toString().trim() === '';
-  const isCollectorEmpty = !editingForm.identification.collectorName || editingForm.identification.collectorName.trim() === '';
   const isLocationEmpty = !editingForm.identification.location || editingForm.identification.location.trim() === '';
   const isYearEmpty = !editingForm.identification.year;
   const isMonthEmpty = !editingForm.identification.month || editingForm.identification.month.trim() === '';
@@ -209,23 +212,6 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
                   placeholder="Ex: 104"
                 />
                 {isIdNumEmpty && <span className="text-[9px] font-bold text-red-500 block mt-0.5">⚠️ Campo obrigatório em falta</span>}
-              </div>
-
-              <div className="space-y-1">
-                <label className={`text-[10px] font-black uppercase tracking-widest ${isCollectorEmpty ? 'text-red-500' : 'text-slate-400'}`}>Coletor</label>
-                <input 
-                  id="edit-field-collector"
-                  type="text" 
-                  className={`w-full p-3 rounded-xl outline-none focus:ring-2 font-medium text-slate-800 border transition-all ${
-                    isCollectorEmpty 
-                      ? 'border-red-300 bg-red-50/20 focus:ring-red-500 focus:border-red-400' 
-                      : 'bg-slate-50 border-slate-200 focus:ring-blue-500'
-                  }`}
-                  value={editingForm.identification.collectorName} 
-                  onChange={e => setEditingForm({...editingForm, identification: {...editingForm.identification, collectorName: e.target.value}})} 
-                  placeholder="Nome do Coletor"
-                />
-                {isCollectorEmpty && <span className="text-[9px] font-bold text-red-500 block mt-0.5">⚠️ Informe o Coletor</span>}
               </div>
 
               <div className="space-y-1">
@@ -694,85 +680,14 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
             <h3 className="text-sm font-bold uppercase tracking-wider text-blue-600 border-b border-slate-100 pb-2 flex items-center gap-2">
               <Settings size={16} /> Arte de Pesca ({editingForm.fishing.gearType})
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-inner">
-              {editingForm.fishing.gearTypeGeneral === 'Rede de emalhe' ? (
-                <>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700">Tamanho da Malha (mm)</label>
-                    <input 
-                      id="edit-gear-mesh"
-                      type="text" 
-                      className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-800"
-                      value={editingForm.gear.meshSize || ''}
-                      onChange={e => setEditingForm({...editingForm, gear: {...editingForm.gear, meshSize: e.target.value}})}
-                      placeholder="--"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700">Comprimento da Rede (m)</label>
-                    <input 
-                      id="edit-gear-length"
-                      type="number" 
-                      className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-800"
-                      value={editingForm.gear.length || ''}
-                      onChange={e => setEditingForm({...editingForm, gear: {...editingForm.gear, length: e.target.value}})}
-                      placeholder="--"
-                    />
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <label className="text-sm font-semibold text-slate-700">Altura (m)</label>
-                    <input 
-                      id="edit-gear-height"
-                      type="text" 
-                      className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-800"
-                      value={editingForm.gear.height || ''}
-                      onChange={e => setEditingForm({...editingForm, gear: {...editingForm.gear, height: e.target.value}})}
-                      placeholder="--"
-                    />
-                  </div>
-                </>
-              ) : editingForm.fishing.gearTypeGeneral === 'Linha de mão' ? (
-                <>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700">Número de Anzóis</label>
-                    <input 
-                      id="edit-gear-hooks"
-                      type="text" 
-                      className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-800"
-                      value={editingForm.gear.hookCount || ''}
-                      onChange={e => setEditingForm({...editingForm, gear: {...editingForm.gear, hookCount: e.target.value}})}
-                      placeholder="--"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-700">Comprimento do Cabo (m)</label>
-                    <input 
-                      id="edit-gear-length-esp"
-                      type="text" 
-                      className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-800"
-                      value={editingForm.gear.length || ''}
-                      onChange={e => setEditingForm({...editingForm, gear: {...editingForm.gear, length: e.target.value}})}
-                      placeholder="--"
-                    />
-                  </div>
-                </>
-              ) : editingForm.fishing.gearTypeGeneral === 'Armadilha' ? (
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-semibold text-slate-700">Número de Armadilhas/Covo</label>
-                  <input 
-                    id="edit-gear-traps"
-                    type="text" 
-                    className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-slate-800"
-                    value={editingForm.gear.trapCount || ''}
-                    onChange={e => setEditingForm({...editingForm, gear: {...editingForm.gear, trapCount: e.target.value}})}
-                    placeholder="--"
-                  />
-                </div>
-              ) : (
-                <div className="col-span-1 md:col-span-2 py-8 text-center text-slate-400 font-medium">
-                  Sem especificações de dimensões adicionais necessárias para a categoria de pesca: <strong className="text-slate-600">{editingForm.fishing.gearTypeGeneral || 'Outros'}</strong>
-                </div>
-              )}
+            <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-inner">
+              <GearDetailsFields
+                general={editingForm.fishing.gearTypeGeneral || ''}
+                specific={editingForm.fishing.gearType || ''}
+                details={editingForm.gear}
+                onChange={details => setEditingForm(prev => ({ ...prev, gear: details }))}
+                idPrefix="edit-gear"
+              />
             </div>
           </div>
 
@@ -1064,6 +979,9 @@ export const EditFormModal: React.FC<EditFormModalProps> = ({
                   ...editingForm.fishing,
                   vesselType: editingForm.fishing.vesselType ? standardizeText(editingForm.fishing.vesselType) : '',
                   propulsionType: editingForm.fishing.propulsionType ? standardizeText(editingForm.fishing.propulsionType) : '',
+                  fisherCount: normalizeFisherCount(editingForm.fishing.fisherCount),
+                  gearType: canonicalizeGearName(editingForm.fishing.gearType),
+                  gearTypeGeneral: canonicalizeGearName(editingForm.fishing.gearTypeGeneral),
                 },
                 production: editingForm.production.map(p => ({
                   ...p,

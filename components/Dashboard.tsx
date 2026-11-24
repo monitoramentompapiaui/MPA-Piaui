@@ -1560,6 +1560,20 @@ const Dashboard: React.FC<Props> = ({ forms, onNewForm, speciesList = [] }) => {
       }
     });
 
+    // Rótulos dos meses comparados (derivados do mesmo índice usado na comparação)
+    const MONTH_NAMES = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    const formatPeriodLabel = (periodValue: number): string | null => {
+      if (periodValue < 0) return null;
+      const monthIdx = periodValue % 12;
+      const year = Math.floor(periodValue / 12);
+      return `${MONTH_NAMES[monthIdx]}/${year}`;
+    };
+    const currentPeriodLabel = formatPeriodLabel(maxPeriodValue) || 'Todos os períodos filtrados';
+    const previousPeriodLabel = formatPeriodLabel(maxPeriodValue - 1);
+
     let currentPeriodForms = filteredForms;
     let previousPeriodForms: typeof filteredForms = [];
 
@@ -1637,6 +1651,8 @@ const Dashboard: React.FC<Props> = ({ forms, onNewForm, speciesList = [] }) => {
       totalTons, 
       totalValue, 
       topSpecies, 
+      currentPeriodLabel,
+      previousPeriodLabel,
       tonsDiffPct, 
       valueDiffPct,
       desembarquesCount: currentDesembarquesCount,
@@ -1987,7 +2003,7 @@ const Dashboard: React.FC<Props> = ({ forms, onNewForm, speciesList = [] }) => {
                 <div className="relative z-10">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 text-white rounded-lg text-xs font-semibold">
                     <span className="font-bold">{stats.tonsDiffPct >= 0 ? '↑' : '↓'} {formatNumberPtBR(Math.abs(stats.tonsDiffPct), 1)}%</span>
-                    <span className="text-blue-100 opacity-85 text-[10px] font-normal">vs mês anterior</span>
+                    <span className="text-blue-100 opacity-85 text-[10px] font-normal">vs {stats.previousPeriodLabel || 'mês anterior'}</span>
                   </div>
                 </div>
 
@@ -2015,7 +2031,7 @@ const Dashboard: React.FC<Props> = ({ forms, onNewForm, speciesList = [] }) => {
                 <div>
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-semibold">
                     <span className="font-bold">{stats.valueDiffPct >= 0 ? '↑' : '↓'} {formatNumberPtBR(Math.abs(stats.valueDiffPct), 1)}%</span>
-                    <span className="text-slate-400 dark:text-slate-500 text-[10px] font-normal">vs mês anterior</span>
+                    <span className="text-slate-400 dark:text-slate-500 text-[10px] font-normal">vs {stats.previousPeriodLabel || 'mês anterior'}</span>
                   </div>
                 </div>
               </div>
@@ -2116,10 +2132,15 @@ const Dashboard: React.FC<Props> = ({ forms, onNewForm, speciesList = [] }) => {
 
             {/* RESUMO DO MÊS */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-[2.5rem] shadow-xl">
-              <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-[10px] sm:text-[11px] uppercase tracking-wider mb-6">
+              <div className="flex flex-wrap items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-[10px] sm:text-[11px] uppercase tracking-wider mb-1.5">
                 <Calendar className="text-blue-600 dark:text-blue-400" size={14} />
-                <span>RESUMO DO MÊS</span>
+                <span>RESUMO DO MÊS · {stats.currentPeriodLabel}</span>
               </div>
+              <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-6">
+                {stats.previousPeriodLabel
+                  ? `Comparação: ${stats.currentPeriodLabel} vs ${stats.previousPeriodLabel}`
+                  : 'Comparação indisponível: não há mês anterior registrado'}
+              </p>
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 divide-y-0 divide-x-0 md:divide-x divide-slate-100 dark:divide-slate-800/80">
                 {/* Desembarques */}
